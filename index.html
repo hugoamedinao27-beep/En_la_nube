@@ -5,151 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cloud Computing</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-            color: #e0f2fe;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #eef4fa;
+            margin: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Nubes decorativas de fondo */
-        body::before,
-        body::after {
-            content: "☁️";
-            position: absolute;
-            font-size: 120px;
-            opacity: 0.12;
-            animation: float 18s ease-in-out infinite;
-        }
-
-        body::before {
-            top: 10%;
-            left: 5%;
-        }
-
-        body::after {
-            bottom: 10%;
-            right: 8%;
-            font-size: 160px;
-            animation-delay: -9s;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-30px); }
+            min-height: 100vh;
         }
 
         .card {
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 24px;
-            padding: 48px 40px;
-            max-width: 520px;
+            background: #ffffff;
+            border: 1px solid #d5dde5;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 480px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-            animation: fadeUp 0.8s ease-out;
-            position: relative;
-            z-index: 1;
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .cloud-icon {
-            font-size: 72px;
-            display: block;
-            margin-bottom: 16px;
-            animation: float 4s ease-in-out infinite;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         h1 {
-            font-size: 2.6rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            background: linear-gradient(90deg, #38bdf8, #a78bfa, #38bdf8);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shine 4s linear infinite;
-            margin-bottom: 8px;
-        }
-
-        @keyframes shine {
-            to { background-position: 200% center; }
-        }
-
-        .divider {
-            width: 60px;
-            height: 4px;
-            background: linear-gradient(90deg, #38bdf8, #a78bfa);
-            border-radius: 4px;
-            margin: 20px auto;
+            font-size: 2rem;
+            color: #2c3e50;
+            margin: 0 0 8px;
         }
 
         h2 {
-            font-size: 1.3rem;
-            font-weight: 500;
-            color: #bae6fd;
-            margin-bottom: 16px;
+            font-size: 1.15rem;
+            color: #57697a;
+            font-weight: normal;
+            margin: 0 0 16px;
         }
 
         p {
-            color: #a5c8e0;
-            line-height: 1.7;
-            font-size: 1rem;
-            margin-bottom: 32px;
-            opacity: 0.9;
+            color: #5b6b7a;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            margin: 0 0 24px;
         }
 
         button {
             font-family: inherit;
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: #0f2027;
-            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            font-size: 1rem;
+            color: #ffffff;
+            background: #3b82f6;
             border: none;
-            padding: 16px 40px;
-            border-radius: 50px;
+            padding: 12px 30px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 20px rgba(56, 189, 248, 0.35);
+            transition: background 0.2s;
         }
 
         button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 14px 30px rgba(56, 189, 248, 0.5);
-            filter: brightness(1.1);
-        }
-
-        button:active {
-            transform: translateY(0);
-            box-shadow: 0 6px 14px rgba(56, 189, 248, 0.3);
+            background: #2f6fe0;
         }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <span class="cloud-icon">☁️</span>
     <h1>Cloud Computing</h1>
-    <div class="divider"></div>
     <h2>Mi primer sistema Cloud</h2>
     <p>
         Sistema creado en la asignatura Computación en la Nube del Instituto Profesional Santo Tomás
