@@ -4,5 +4,11 @@
     "descripcion": "Artefacto básico de Magic: The Gathering.",
     "precio": "15000",
     "imagen": "/Imagenes/Solring.jpg"
+  },
+  {
+    "nombre": "667868",
+    "descripcion": "87",
+    "precio": ".8",
+    "imagen": ""
   }
 ]
