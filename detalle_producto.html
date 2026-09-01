@@ -23,16 +23,15 @@
         const parametros = new URLSearchParams(window.location.search);
         const id = parametros.get('id');
 
-        const productos = JSON.parse(localStorage.getItem('productos')) || [];
-        const producto = productos[Number(id)];
-
-        if (!producto) {
-            contenedor.style.display = 'none';
-            noEncontrado.style.display = 'block';
-            return;
-        }
-
-        noEncontrado.style.display = 'none';
+        fetch('/api/productos/' + id)
+            .then(function (respuesta) {
+                if (!respuesta.ok) {
+                    throw new Error('Producto no encontrado');
+                }
+                return respuesta.json();
+            })
+            .then(function (producto) {
+                noEncontrado.style.display = 'none';
 
         const ficha = document.createElement('div');
         ficha.className = 'ficha';
@@ -81,6 +80,11 @@
         ficha.appendChild(info);
 
         contenedor.appendChild(ficha);
+            })
+            .catch(function () {
+                contenedor.style.display = 'none';
+                noEncontrado.style.display = 'block';
+            });
     }
 
     window.addEventListener('DOMContentLoaded', mostrarDetalle);

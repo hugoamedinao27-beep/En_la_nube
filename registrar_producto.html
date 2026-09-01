@@ -31,7 +31,7 @@
             <input type="file" id="imagen" name="imagen" accept="image/*">
         </label>
         <img id="vistaPrevia" class="vista-previa" alt="Vista previa">
-        <button type="submit" class="btn btn-registrar">Guardar Producto</button>
+        <button type="submit" id="btnGuardar" class="btn btn-registrar">Guardar Producto</button>
     </form>
 
     <p id="mensaje" class="mensaje"></p>
@@ -42,7 +42,6 @@
 <script>
     const inputImagen = document.getElementById('imagen');
     const vistaPrevia = document.getElementById('vistaPrevia');
-    let imagenGuardada = '';
 
     inputImagen.addEventListener('change', function () {
         const archivo = this.files[0];
@@ -50,8 +49,7 @@
 
         const lector = new FileReader();
         lector.onload = function (e) {
-            imagenGuardada = e.target.result;
-            vistaPrevia.src = imagenGuardada;
+            vistaPrevia.src = e.target.result;
             vistaPrevia.style.display = 'block';
         };
         lector.readAsDataURL(archivo);
@@ -60,20 +58,40 @@
     document.getElementById('formProducto').addEventListener('submit', function (e) {
         e.preventDefault();
 
-        const nombre = document.getElementById('nombre').value.trim();
-        const descripcion = document.getElementById('descripcion').value.trim();
-        const precio = document.getElementById('precio').value.trim();
+        const mensaje = document.getElementById('mensaje');
+        const boton = document.getElementById('btnGuardar');
+        boton.disabled = true;
+        boton.textContent = 'Guardando...';
 
-        const productos = JSON.parse(localStorage.getItem('productos')) || [];
-        productos.push({ nombre: nombre, descripcion: descripcion, precio: precio, imagen: imagenGuardada });
+        const formData = new FormData();
+        formData.append('nombre', document.getElementById('nombre').value.trim());
+        formData.append('descripcion', document.getElementById('descripcion').value.trim());
+        formData.append('precio', document.getElementById('precio').value.trim());
+        formData.append('imagen', document.getElementById('imagen').files[0] || '');
 
-        localStorage.setItem('productos', JSON.stringify(productos));
-
-        document.getElementById('mensaje').textContent = 'Producto guardado correctamente.';
-        document.getElementById('mensaje').style.color = '#16a34a';
-        vistaPrevia.style.display = 'none';
-        imagenGuardada = '';
-        this.reset();
+        fetch('/api/productos', { method: 'POST', body: formData })
+            .then(function (respuesta) {
+                if (!respuesta.ok) {
+                    return respuesta.json().then(function (d) {
+                        throw new Error(d.error || 'Error al guardar');
+                    });
+                }
+                return respuesta.json();
+            })
+            .then(function () {
+                mensaje.textContent = 'Producto guardado correctamente.';
+                mensaje.style.color = '#16a34a';
+                vistaPrevia.style.display = 'none';
+                e.target.reset();
+            })
+            .catch(function (error) {
+                mensaje.textContent = error.message;
+                mensaje.style.color = '#dc2626';
+            })
+            .finally(function () {
+                boton.disabled = false;
+                boton.textContent = 'Guardar Producto';
+            });
     });
 </script>
 

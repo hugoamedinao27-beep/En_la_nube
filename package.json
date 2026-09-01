@@ -1,0 +1,13 @@
+{
+  "name": "en-la-nube",
+  "version": "1.0.0",
+  "description": "Mi primer sistema Cloud - Registro y visualizacion de cartas MTG",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^2.3.0"
+  }
+}
