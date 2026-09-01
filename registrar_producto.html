@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Producto</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="card">
+    <h1>Registrar Producto</h1>
+    <h2>Formulario de registro</h2>
+    <p>Aqui podras registrar un nuevo producto en el sistema.</p>
+
+    <form id="formProducto" class="form">
+        <label class="campo">
+            <span>Nombre</span>
+            <input type="text" id="nombre" name="nombre" placeholder="Ej: Black Lotus" required>
+        </label>
+        <label class="campo">
+            <span>Descripcion</span>
+            <textarea id="descripcion" name="descripcion" placeholder="Ej: Carta rara de Magic: The Gathering" required></textarea>
+        </label>
+        <label class="campo">
+            <span>Precio</span>
+            <input type="number" id="precio" name="precio" placeholder="Ej: 25000" step="0.01" min="0" required>
+        </label>
+        <label class="campo">
+            <span>Imagen de la carta</span>
+            <input type="file" id="imagen" name="imagen" accept="image/*">
+        </label>
+        <img id="vistaPrevia" class="vista-previa" alt="Vista previa">
+        <button type="submit" class="btn btn-registrar">Guardar Producto</button>
+    </form>
+
+    <p id="mensaje" class="mensaje"></p>
+
+    <a href="index.html" class="btn btn-volver">Volver al inicio</a>
+</div>
+
+<script>
+    const inputImagen = document.getElementById('imagen');
+    const vistaPrevia = document.getElementById('vistaPrevia');
+    let imagenGuardada = '';
+
+    inputImagen.addEventListener('change', function () {
+        const archivo = this.files[0];
+        if (!archivo) return;
+
+        const lector = new FileReader();
+        lector.onload = function (e) {
+            imagenGuardada = e.target.result;
+            vistaPrevia.src = imagenGuardada;
+            vistaPrevia.style.display = 'block';
+        };
+        lector.readAsDataURL(archivo);
+    });
+
+    document.getElementById('formProducto').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const nombre = document.getElementById('nombre').value.trim();
+        const descripcion = document.getElementById('descripcion').value.trim();
+        const precio = document.getElementById('precio').value.trim();
+
+        const productos = JSON.parse(localStorage.getItem('productos')) || [];
+        productos.push({ nombre: nombre, descripcion: descripcion, precio: precio, imagen: imagenGuardada });
+
+        localStorage.setItem('productos', JSON.stringify(productos));
+
+        document.getElementById('mensaje').textContent = 'Producto guardado correctamente.';
+        document.getElementById('mensaje').style.color = '#16a34a';
+        vistaPrevia.style.display = 'none';
+        imagenGuardada = '';
+        this.reset();
+    });
+</script>
+
+</body>
+</html>

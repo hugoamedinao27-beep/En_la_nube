@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ver Productos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="card card-lista">
+    <h1>Ver Productos</h1>
+    <h2>Lista de productos registrados</h2>
+    <p>Aqui se muestran todos los productos (cartas de MTG) del sistema.</p>
+
+    <div id="listaProductos" class="productos"></div>
+
+    <p id="vacio" class="mensaje">No hay productos registrados todavia.</p>
+
+    <a href="index.html" class="btn btn-volver">Volver al inicio</a>
+</div>
+
+<script>
+    window.addEventListener('DOMContentLoaded', function () {
+        const productos = JSON.parse(localStorage.getItem('productos')) || [];
+        if (productos.length === 0) {
+            productos.push({
+                nombre: 'Sol Ring',
+                descripcion: 'Artefacto básico de Magic: The Gathering.',
+                precio: '15000',
+                imagen: 'Imagenes/Solring.jpg'
+            });
+            localStorage.setItem('productos', JSON.stringify(productos));
+        }
+        mostrarProductos();
+    });
+
+    function mostrarProductos() {
+        const contenedor = document.getElementById('listaProductos');
+        const vacio = document.getElementById('vacio');
+        const productos = JSON.parse(localStorage.getItem('productos')) || [];
+
+        contenedor.innerHTML = '';
+
+        if (productos.length === 0) {
+            vacio.style.display = 'block';
+            return;
+        }
+
+        vacio.style.display = 'none';
+
+        productos.forEach(function (p, indice) {
+            const carta = document.createElement('div');
+            carta.className = 'carta';
+            carta.style.cursor = 'pointer';
+            carta.title = 'Ver detalle';
+            carta.addEventListener('click', function () {
+                location.href = 'detalle_producto.html?id=' + indice;
+            });
+
+            const tipo = document.createElement('div');
+            tipo.className = 'carta-tipo';
+            tipo.textContent = 'Cartas de MTG';
+
+            const nombre = document.createElement('div');
+            nombre.className = 'carta-nombre';
+            nombre.textContent = p.nombre;
+
+            const imagen = document.createElement('div');
+            imagen.className = 'carta-imagen';
+            if (p.imagen) {
+                const img = document.createElement('img');
+                img.src = p.imagen;
+                img.alt = p.nombre;
+                imagen.appendChild(img);
+            } else {
+                imagen.textContent = 'MTG';
+            }
+
+            const descripcion = document.createElement('div');
+            descripcion.className = 'carta-descripcion';
+            descripcion.textContent = p.descripcion;
+
+            const precio = document.createElement('div');
+            precio.className = 'carta-precio';
+            precio.textContent = '$' + p.precio;
+
+            carta.appendChild(tipo);
+            carta.appendChild(nombre);
+            carta.appendChild(imagen);
+            carta.appendChild(descripcion);
+            carta.appendChild(precio);
+
+            contenedor.appendChild(carta);
+        });
+    }
+
+</script>
+
+</body>
+</html>

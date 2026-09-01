@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle del Producto</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="card card-detalle">
+    <h1>Detalle del Producto</h1>
+    <div id="detalle" class="detalle"></div>
+    <p id="noEncontrado" class="mensaje">No se encontro el producto.</p>
+    <a href="ver_productos.html" class="btn btn-volver">Volver a productos</a>
+</div>
+
+<script>
+    function mostrarDetalle() {
+        const contenedor = document.getElementById('detalle');
+        const noEncontrado = document.getElementById('noEncontrado');
+
+        const parametros = new URLSearchParams(window.location.search);
+        const id = parametros.get('id');
+
+        const productos = JSON.parse(localStorage.getItem('productos')) || [];
+        const producto = productos[Number(id)];
+
+        if (!producto) {
+            contenedor.style.display = 'none';
+            noEncontrado.style.display = 'block';
+            return;
+        }
+
+        noEncontrado.style.display = 'none';
+
+        const ficha = document.createElement('div');
+        ficha.className = 'ficha';
+
+        const imagen = document.createElement('div');
+        imagen.className = 'ficha-imagen';
+        if (producto.imagen) {
+            const img = document.createElement('img');
+            img.src = producto.imagen;
+            img.alt = producto.nombre;
+            imagen.appendChild(img);
+        } else {
+            imagen.textContent = 'MTG';
+        }
+
+        const info = document.createElement('div');
+        info.className = 'ficha-info';
+
+        const tipo = document.createElement('div');
+        tipo.className = 'ficha-tipo';
+        tipo.textContent = 'Cartas de MTG';
+
+        const nombre = document.createElement('div');
+        nombre.className = 'ficha-nombre';
+        nombre.textContent = producto.nombre;
+
+        const descripcion = document.createElement('div');
+        descripcion.className = 'ficha-descripcion';
+        descripcion.textContent = producto.descripcion;
+
+        const precioEtiqueta = document.createElement('div');
+        precioEtiqueta.className = 'ficha-etiqueta';
+        precioEtiqueta.textContent = 'Precio';
+
+        const precio = document.createElement('div');
+        precio.className = 'ficha-precio';
+        precio.textContent = '$' + producto.precio;
+
+        info.appendChild(tipo);
+        info.appendChild(nombre);
+        info.appendChild(descripcion);
+        info.appendChild(precioEtiqueta);
+        info.appendChild(precio);
+
+        ficha.appendChild(imagen);
+        ficha.appendChild(info);
+
+        contenedor.appendChild(ficha);
+    }
+
+    window.addEventListener('DOMContentLoaded', mostrarDetalle);
+</script>
+
+</body>
+</html>
