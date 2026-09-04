@@ -55,13 +55,13 @@
 
         vacio.style.display = 'none';
 
-        productos.forEach(function (p, indice) {
+        productos.forEach(function (p) {
             const carta = document.createElement('div');
             carta.className = 'carta';
             carta.style.cursor = 'pointer';
             carta.title = 'Ver detalle';
             carta.addEventListener('click', function () {
-                location.href = 'detalle_producto.html?id=' + indice;
+                location.href = 'detalle_producto.html?id=' + p.id;
             });
 
             const tipo = document.createElement('div');
