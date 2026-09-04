@@ -93,6 +93,53 @@ app.post('/api/productos', upload.single('imagen'), async function (req, res) {
   }
 });
 
+// ── API: Eliminar un producto ──
+app.delete('/api/productos/:id', async function (req, res) {
+  try {
+    const doc = await productosRef.doc(req.params.id).get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+    await productosRef.doc(req.params.id).delete();
+    res.json({ ok: true, mensaje: 'Producto eliminado correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar producto:', error);
+    res.status(500).json({ error: 'Error al eliminar producto' });
+  }
+});
+
+// ── API: Actualizar un producto ──
+app.put('/api/productos/:id', upload.single('imagen'), async function (req, res) {
+  const { nombre, descripcion, precio } = req.body;
+
+  if (!nombre || !descripcion || !precio) {
+    return res.status(400).json({ error: 'Faltan nombre, descripcion o precio' });
+  }
+
+  try {
+    const doc = await productosRef.doc(req.params.id).get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    const datosActualizados = {
+      nombre: nombre,
+      descripcion: descripcion,
+      precio: precio
+    };
+
+    if (req.file) {
+      datosActualizados.imagen = '/Imagenes/' + req.file.filename;
+    }
+
+    await productosRef.doc(req.params.id).update(datosActualizados);
+    res.json({ ok: true, mensaje: 'Producto actualizado correctamente' });
+  } catch (error) {
+    console.error('Error al actualizar producto:', error);
+    res.status(500).json({ error: 'Error al actualizar producto' });
+  }
+});
+
 // ── Ruta principal ──
 app.get('/', function (req, res) {
   res.sendFile(RUTA_INDEX);

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Producto</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="card">
+    <h1>Editar Producto</h1>
+    <h2>Modificar producto existente</h2>
+    <p>Aqui podras modificar los datos de un producto registrado.</p>
+
+    <form id="formEditar" class="form">
+        <label class="campo">
+            <span>Nombre</span>
+            <input type="text" id="nombre" name="nombre" placeholder="Ej: Black Lotus" required>
+        </label>
+        <label class="campo">
+            <span>Descripcion</span>
+            <textarea id="descripcion" name="descripcion" placeholder="Ej: Carta rara de Magic: The Gathering" required></textarea>
+        </label>
+        <label class="campo">
+            <span>Precio</span>
+            <input type="number" id="precio" name="precio" placeholder="Ej: 25000" step="0.01" min="0" required>
+        </label>
+        <label class="campo">
+            <span>Imagen actual</span>
+            <img id="imagenActual" class="vista-previa" alt="Imagen actual">
+        </label>
+        <label class="campo">
+            <span>Nueva imagen (opcional)</span>
+            <input type="file" id="imagen" name="imagen" accept="image/*">
+        </label>
+        <img id="vistaPrevia" class="vista-previa" alt="Vista previa">
+        <button type="submit" id="btnActualizar" class="btn btn-editar">Actualizar Producto</button>
+    </form>
+
+    <p id="mensaje" class="mensaje"></p>
+
+    <a href="ver_productos.html" class="btn btn-volver">Volver a productos</a>
+</div>
+
+<script type="module">
+    import { productosRef, doc, getDoc, updateDoc } from './firebaseConfig.js';
+
+    const params = new URLSearchParams(window.location.search);
+    const productoId = params.get('id');
+
+    if (!productoId) {
+        document.getElementById('mensaje').textContent = 'No se especificó un producto.';
+        document.getElementById('mensaje').style.color = '#dc2626';
+        document.getElementById('formEditar').style.display = 'none';
+    } else {
+        cargarProducto();
+    }
+
+    async function cargarProducto() {
+        try {
+            const docRef = doc(productosRef, productoId);
+            const docSnap = await getDoc(docRef);
+
+            if (!docSnap.exists()) {
+                document.getElementById('mensaje').textContent = 'Producto no encontrado.';
+                document.getElementById('mensaje').style.color = '#dc2626';
+                document.getElementById('formEditar').style.display = 'none';
+                return;
+            }
+
+            const data = docSnap.data();
+            document.getElementById('nombre').value = data.nombre || '';
+            document.getElementById('descripcion').value = data.descripcion || '';
+            document.getElementById('precio').value = data.precio || '';
+
+            const imagenActual = document.getElementById('imagenActual');
+            if (data.imagen) {
+                imagenActual.src = data.imagen;
+                imagenActual.style.display = 'block';
+            }
+        } catch (error) {
+            document.getElementById('mensaje').textContent = 'Error al cargar: ' + error.message;
+            document.getElementById('mensaje').style.color = '#dc2626';
+        }
+    }
+
+    const inputImagen = document.getElementById('imagen');
+    const vistaPrevia = document.getElementById('vistaPrevia');
+
+    inputImagen.addEventListener('change', function () {
+        const archivo = this.files[0];
+        if (!archivo) return;
+
+        const lector = new FileReader();
+        lector.onload = function (e) {
+            vistaPrevia.src = e.target.result;
+            vistaPrevia.style.display = 'block';
+        };
+        lector.readAsDataURL(archivo);
+    });
+
+    function comprimirImagen(archivo, maxAncho, calidad) {
+        return new Promise(function (resolver, rechazar) {
+            const lector = new FileReader();
+            lector.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    let ancho = img.width;
+                    let alto = img.height;
+                    if (ancho > maxAncho) {
+                        alto = Math.round(alto * maxAncho / ancho);
+                        ancho = maxAncho;
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = ancho;
+                    canvas.height = alto;
+                    const contexto = canvas.getContext('2d');
+                    contexto.drawImage(img, 0, 0, ancho, alto);
+                    resolver(canvas.toDataURL('image/jpeg', calidad));
+                };
+                img.onerror = rechazar;
+                img.src = e.target.result;
+            };
+            lector.onerror = rechazar;
+            lector.readAsDataURL(archivo);
+        });
+    }
+
+    document.getElementById('formEditar').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const mensaje = document.getElementById('mensaje');
+        const boton = document.getElementById('btnActualizar');
+        boton.disabled = true;
+        boton.textContent = 'Actualizando...';
+
+        const nombre = document.getElementById('nombre').value.trim();
+        const descripcion = document.getElementById('descripcion').value.trim();
+        const precio = document.getElementById('precio').value.trim();
+        const archivoImagen = document.getElementById('imagen').files[0];
+
+        try {
+            const datosActualizados = {
+                nombre: nombre,
+                descripcion: descripcion,
+                precio: precio
+            };
+
+            if (archivoImagen) {
+                datosActualizados.imagen = await comprimirImagen(archivoImagen, 800, 0.7);
+            }
+
+            const docRef = doc(productosRef, productoId);
+            await updateDoc(docRef, datosActualizados);
+
+            mensaje.textContent = 'Producto actualizado correctamente.';
+            mensaje.style.color = '#16a34a';
+        } catch (error) {
+            mensaje.textContent = 'Error al actualizar: ' + error.message;
+            mensaje.style.color = '#dc2626';
+        } finally {
+            boton.disabled = false;
+            boton.textContent = 'Actualizar Producto';
+        }
+    });
+</script>
+
+</body>
+</html>

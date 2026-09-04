@@ -21,7 +21,7 @@
 </div>
 
 <script type="module">
-    import { productosRef, collection, getDocs, query, orderBy } from './firebaseConfig.js';
+    import { productosRef, collection, getDocs, query, orderBy, deleteDoc, doc } from './firebaseConfig.js';
 
     window.addEventListener('DOMContentLoaded', function () {
         cargarProductos();
@@ -59,11 +59,6 @@
         productos.forEach(function (p) {
             const carta = document.createElement('div');
             carta.className = 'carta';
-            carta.style.cursor = 'pointer';
-            carta.title = 'Ver detalle';
-            carta.addEventListener('click', function () {
-                location.href = 'detalle_producto.html?id=' + p.id;
-            });
 
             const tipo = document.createElement('div');
             tipo.className = 'carta-tipo';
@@ -92,11 +87,45 @@
             precio.className = 'carta-precio';
             precio.textContent = '$' + p.precio;
 
+            const acciones = document.createElement('div');
+            acciones.className = 'carta-acciones';
+
+            const btnEditar = document.createElement('button');
+            btnEditar.className = 'btn-accion btn-editar';
+            btnEditar.textContent = 'Modificar';
+            btnEditar.addEventListener('click', function (e) {
+                e.stopPropagation();
+                location.href = 'editar_producto.html?id=' + p.id;
+            });
+
+            const btnEliminar = document.createElement('button');
+            btnEliminar.className = 'btn-accion btn-eliminar';
+            btnEliminar.textContent = 'Eliminar';
+            btnEliminar.addEventListener('click', async function (e) {
+                e.stopPropagation();
+                if (confirm('¿Estás seguro de que quieres eliminar "' + p.nombre + '"?')) {
+                    try {
+                        await deleteDoc(doc(productosRef, p.id));
+                        carta.remove();
+                        const remaining = contenedor.querySelectorAll('.carta');
+                        if (remaining.length === 0) {
+                            vacio.style.display = 'block';
+                        }
+                    } catch (error) {
+                        alert('Error al eliminar: ' + error.message);
+                    }
+                }
+            });
+
+            acciones.appendChild(btnEditar);
+            acciones.appendChild(btnEliminar);
+
             carta.appendChild(tipo);
             carta.appendChild(nombre);
             carta.appendChild(imagen);
             carta.appendChild(descripcion);
             carta.appendChild(precio);
+            carta.appendChild(acciones);
 
             contenedor.appendChild(carta);
         });
