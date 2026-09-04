@@ -20,24 +20,25 @@
     <a href="index.html" class="btn btn-volver">Volver al inicio</a>
 </div>
 
-<script>
+<script type="module">
+    import { productosRef, collection, getDocs, query, orderBy } from './firebaseConfig.js';
+
     window.addEventListener('DOMContentLoaded', function () {
         cargarProductos();
     });
 
     function cargarProductos() {
-        fetch('/api/productos')
-            .then(function (respuesta) {
-                if (!respuesta.ok) {
-                    throw new Error('Error al cargar los productos');
-                }
-                return respuesta.json();
-            })
-            .then(function (productos) {
+        const consulta = query(productosRef, orderBy('createdAt', 'desc'));
+        getDocs(consulta)
+            .then(function (snapshot) {
+                const productos = [];
+                snapshot.forEach(function (doc) {
+                    productos.push({ id: doc.id, ...doc.data() });
+                });
                 mostrarProductos(productos);
             })
             .catch(function () {
-                document.getElementById('vacio').textContent = 'No se pudo conectar con el servidor.';
+                document.getElementById('vacio').textContent = 'No se pudo conectar con Firebase.';
                 document.getElementById('vacio').style.display = 'block';
             });
     }

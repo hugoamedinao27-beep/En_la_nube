@@ -39,7 +39,9 @@
     <a href="index.html" class="btn btn-volver">Volver al inicio</a>
 </div>
 
-<script>
+<script type="module">
+    import { productosRef, addDoc, serverTimestamp } from './firebaseConfig.js';
+
     const inputImagen = document.getElementById('imagen');
     const vistaPrevia = document.getElementById('vistaPrevia');
 
@@ -55,7 +57,34 @@
         lector.readAsDataURL(archivo);
     });
 
-    document.getElementById('formProducto').addEventListener('submit', function (e) {
+    function comprimirImagen(archivo, maxAncho, calidad) {
+        return new Promise(function (resolver, rechazar) {
+            const lector = new FileReader();
+            lector.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    let ancho = img.width;
+                    let alto = img.height;
+                    if (ancho > maxAncho) {
+                        alto = Math.round(alto * maxAncho / ancho);
+                        ancho = maxAncho;
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = ancho;
+                    canvas.height = alto;
+                    const contexto = canvas.getContext('2d');
+                    contexto.drawImage(img, 0, 0, ancho, alto);
+                    resolver(canvas.toDataURL('image/jpeg', calidad));
+                };
+                img.onerror = rechazar;
+                img.src = e.target.result;
+            };
+            lector.onerror = rechazar;
+            lector.readAsDataURL(archivo);
+        });
+    }
+
+    document.getElementById('formProducto').addEventListener('submit', async function (e) {
         e.preventDefault();
 
         const mensaje = document.getElementById('mensaje');
@@ -63,35 +92,36 @@
         boton.disabled = true;
         boton.textContent = 'Guardando...';
 
-        const formData = new FormData();
-        formData.append('nombre', document.getElementById('nombre').value.trim());
-        formData.append('descripcion', document.getElementById('descripcion').value.trim());
-        formData.append('precio', document.getElementById('precio').value.trim());
-        formData.append('imagen', document.getElementById('imagen').files[0] || '');
+        const nombre = document.getElementById('nombre').value.trim();
+        const descripcion = document.getElementById('descripcion').value.trim();
+        const precio = document.getElementById('precio').value.trim();
+        const archivoImagen = document.getElementById('imagen').files[0];
 
-        fetch('/api/productos', { method: 'POST', body: formData })
-            .then(function (respuesta) {
-                if (!respuesta.ok) {
-                    return respuesta.json().then(function (d) {
-                        throw new Error(d.error || 'Error al guardar');
-                    });
-                }
-                return respuesta.json();
-            })
-            .then(function () {
-                mensaje.textContent = 'Producto guardado correctamente.';
-                mensaje.style.color = '#16a34a';
-                vistaPrevia.style.display = 'none';
-                e.target.reset();
-            })
-            .catch(function (error) {
-                mensaje.textContent = error.message;
-                mensaje.style.color = '#dc2626';
-            })
-            .finally(function () {
-                boton.disabled = false;
-                boton.textContent = 'Guardar Producto';
+        try {
+            let imagen = '';
+            if (archivoImagen) {
+                imagen = await comprimirImagen(archivoImagen, 800, 0.7);
+            }
+
+            await addDoc(productosRef, {
+                nombre: nombre,
+                descripcion: descripcion,
+                precio: precio,
+                imagen: imagen,
+                createdAt: serverTimestamp()
             });
+
+            mensaje.textContent = 'Producto guardado correctamente.';
+            mensaje.style.color = '#16a34a';
+            vistaPrevia.style.display = 'none';
+            e.target.reset();
+        } catch (error) {
+            mensaje.textContent = 'Error al guardar: ' + error.message;
+            mensaje.style.color = '#dc2626';
+        } finally {
+            boton.disabled = false;
+            boton.textContent = 'Guardar Producto';
+        }
     });
 </script>
 
