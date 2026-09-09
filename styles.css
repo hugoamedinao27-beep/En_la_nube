@@ -20,6 +20,14 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+.logo-principal {
+    display: block;
+    margin: 0 auto 16px;
+    max-width: 200px;
+    width: 100%;
+    height: auto;
+}
+
 h1 {
     font-size: 24px;
     color: #111111;

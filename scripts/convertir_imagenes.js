@@ -3,14 +3,14 @@ const { getFirestore } = require('firebase-admin/firestore');
 const fs = require('fs');
 const path = require('path');
 
-const serviceAccount = require('./serviceAccountKey.json');
+const serviceAccount = require('../serviceAccountKey.json');
 initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
 const productosRef = db.collection('productos');
 
 async function convertImageToBase64(ruta) {
   if (!ruta) return '';
-  const rutaLocal = path.join(__dirname, ruta.replace(/^\//, ''));
+  const rutaLocal = path.join(__dirname, '../' + ruta.replace(/^\//, ''));
   if (!fs.existsSync(rutaLocal)) return '';
   const buf = fs.readFileSync(rutaLocal);
   return 'data:image/jpeg;base64,' + buf.toString('base64');

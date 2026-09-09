@@ -3,13 +3,13 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const fs = require('fs');
 const path = require('path');
 
-const serviceAccount = require('./serviceAccountKey.json');
+const serviceAccount = require('../serviceAccountKey.json');
 initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
 const productosRef = db.collection('productos');
 
 async function migrar() {
-  const datos = JSON.parse(fs.readFileSync(path.join(__dirname, 'productos.json'), 'utf8'));
+  const datos = JSON.parse(fs.readFileSync(path.join(__dirname, '../datos/productos.json'), 'utf8'));
   console.log('Migrando ' + datos.length + ' productos a Firestore...');
 
   for (const p of datos) {
