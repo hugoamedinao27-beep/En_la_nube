@@ -27,6 +27,10 @@
             <input type="number" id="precio" name="precio" placeholder="Ej: 25000" step="0.01" min="0" required>
         </label>
         <label class="campo">
+            <span>Stock (cantidad disponible)</span>
+            <input type="number" id="stock" name="stock" placeholder="Ej: 10" step="1" min="0" required>
+        </label>
+        <label class="campo">
             <span>Imagen actual</span>
             <img id="imagenActual" class="vista-previa" alt="Imagen actual">
         </label>
@@ -44,7 +48,7 @@
 </div>
 
 <script type="module">
-    import { productosRef, doc, getDoc, updateDoc } from './firebaseConfig.js';
+    import { productosRef, doc, getDoc, updateDoc, autenticacionAnonima } from './firebaseConfig.js';
 
     const params = new URLSearchParams(window.location.search);
     const productoId = params.get('id');
@@ -72,7 +76,8 @@
             const data = docSnap.data();
             document.getElementById('nombre').value = data.nombre || '';
             document.getElementById('descripcion').value = data.descripcion || '';
-            document.getElementById('precio').value = data.precio || '';
+            document.getElementById('precio').value = data.precio ?? '';
+            document.getElementById('stock').value = data.stock ?? '';
 
             const imagenActual = document.getElementById('imagenActual');
             if (data.imagen) {
@@ -137,14 +142,34 @@
 
         const nombre = document.getElementById('nombre').value.trim();
         const descripcion = document.getElementById('descripcion').value.trim();
-        const precio = document.getElementById('precio').value.trim();
+        const precio = Number(document.getElementById('precio').value);
+        const stock = Number(document.getElementById('stock').value);
         const archivoImagen = document.getElementById('imagen').files[0];
 
+        if (!Number.isFinite(precio) || precio < 0) {
+            boton.disabled = false;
+            boton.textContent = 'Actualizar Producto';
+            mensaje.textContent = 'El precio debe ser un número mayor o igual a 0.';
+            mensaje.style.color = '#dc2626';
+            return;
+        }
+
+        if (!Number.isInteger(stock) || stock < 0) {
+            boton.disabled = false;
+            boton.textContent = 'Actualizar Producto';
+            mensaje.textContent = 'El stock debe ser un número entero mayor o igual a 0.';
+            mensaje.style.color = '#dc2626';
+            return;
+        }
+
         try {
+            await autenticacionAnonima;
+
             const datosActualizados = {
                 nombre: nombre,
                 descripcion: descripcion,
-                precio: precio
+                precio: precio,
+                stock: stock
             };
 
             if (archivoImagen) {

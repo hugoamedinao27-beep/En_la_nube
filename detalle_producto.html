@@ -66,13 +66,25 @@
         precioEtiqueta.className = 'ficha-etiqueta';
         precioEtiqueta.textContent = 'Precio';
 
+        const stockEtiqueta = document.createElement('div');
+        stockEtiqueta.className = 'ficha-etiqueta';
+        stockEtiqueta.textContent = 'Stock';
+
+        const stock = document.createElement('div');
+        stock.className = 'ficha-stock';
+        const stockNum = Number(producto.stock);
+        stock.textContent = (Number.isFinite(stockNum) && stockNum > 0) ? 'Disponibles: ' + stockNum : 'Sin stock';
+        stock.classList.add(Number.isFinite(stockNum) && stockNum > 0 ? 'ficha-stock-en' : 'ficha-stock-agotado');
+
         const precio = document.createElement('div');
         precio.className = 'ficha-precio';
-        precio.textContent = '$' + producto.precio;
+        precio.textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(producto.precio));
 
         info.appendChild(tipo);
         info.appendChild(nombre);
         info.appendChild(descripcion);
+        info.appendChild(stockEtiqueta);
+        info.appendChild(stock);
         info.appendChild(precioEtiqueta);
         info.appendChild(precio);
 

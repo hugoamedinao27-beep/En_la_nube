@@ -13,9 +13,28 @@
     <h2>Lista de productos registrados</h2>
     <p>Aqui se muestran todos los productos (cartas de MTG) del sistema.</p>
 
+    <div class="filtros">
+        <input type="search" id="busqueda" class="campo-busqueda" placeholder="Buscar por nombre o descripcion...">
+        <div class="filtros-opciones">
+            <select id="orden" class="campo-select">
+                <option value="recientes">Mas recientes</option>
+                <option value="nombre-asc">Nombre (A-Z)</option>
+                <option value="nombre-desc">Nombre (Z-A)</option>
+                <option value="precio-asc">Precio (menor a mayor)</option>
+                <option value="precio-desc">Precio (mayor a menor)</option>
+            </select>
+            <label class="solo-stock">
+                <input type="checkbox" id="soloStock"> Solo en stock
+            </label>
+        </div>
+    </div>
+
+    <div id="contador" class="contador"></div>
+
     <div id="listaProductos" class="productos"></div>
 
     <p id="vacio" class="mensaje">No hay productos registrados todavia.</p>
+    <p id="sinResultados" class="mensaje" style="display:none;">No hay productos que coincidan con el filtro.</p>
 
     <a href="index.html" class="btn btn-volver">Volver al inicio</a>
 </div>
@@ -32,10 +51,20 @@
 </div>
 
 <script type="module">
-    import { productosRef, collection, getDocs, query, orderBy, deleteDoc, doc } from './firebaseConfig.js';
+    import { productosRef, collection, getDocs, query, orderBy, deleteDoc, doc, autenticacionAnonima } from './firebaseConfig.js';
+
+    let productosDisponibles = [];
 
     window.addEventListener('DOMContentLoaded', function () {
         cargarProductos();
+
+        const busqueda = document.getElementById('busqueda');
+        const orden = document.getElementById('orden');
+        const soloStock = document.getElementById('soloStock');
+
+        busqueda.addEventListener('input', render);
+        orden.addEventListener('change', render);
+        soloStock.addEventListener('change', render);
     });
 
     function cargarProductos() {
@@ -46,7 +75,8 @@
                 snapshot.forEach(function (doc) {
                     productos.push({ id: doc.id, ...doc.data() });
                 });
-                mostrarProductos(productos);
+                productosDisponibles = productos;
+                render();
             })
             .catch(function () {
                 document.getElementById('vacio').textContent = 'No se pudo conectar con Firebase.';
@@ -54,75 +84,139 @@
             });
     }
 
-    function mostrarProductos(productos) {
-        const contenedor = document.getElementById('listaProductos');
-        const vacio = document.getElementById('vacio');
+    function formatearPrecio(precio) {
+        const numero = Number(precio);
+        if (!Number.isFinite(numero)) return '$' + precio;
+        return numero.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
 
-        contenedor.innerHTML = '';
+    function badgeStock(producto) {
+        const badge = document.createElement('div');
+        const stock = Number(producto.stock);
+        if (Number.isFinite(stock) && stock > 0) {
+            badge.className = 'stock-badge stock-en';
+            badge.textContent = 'En stock: ' + stock;
+        } else {
+            badge.className = 'stock-badge stock-agotado';
+            badge.textContent = 'Sin stock';
+        }
+        return badge;
+    }
 
-        if (productos.length === 0) {
-            vacio.style.display = 'block';
-            return;
+    function aplicarFiltros(lista) {
+        const termino = document.getElementById('busqueda').value.trim().toLowerCase();
+        const soloStock = document.getElementById('soloStock').checked;
+        const orden = document.getElementById('orden').value;
+
+        let resultado = lista.filter(function (p) {
+            const coincideTexto = !termino || (p.nombre || '').toLowerCase().includes(termino) || (p.descripcion || '').toLowerCase().includes(termino);
+            const coincideStock = !soloStock || Number(p.stock) > 0;
+            return coincideTexto && coincideStock;
+        });
+
+        switch (orden) {
+            case 'nombre-asc':
+                resultado.sort(function (a, b) { return String(a.nombre).localeCompare(String(b.nombre)); });
+                break;
+            case 'nombre-desc':
+                resultado.sort(function (a, b) { return String(b.nombre).localeCompare(String(a.nombre)); });
+                break;
+            case 'precio-asc':
+                resultado.sort(function (a, b) { return Number(a.precio) - Number(b.precio); });
+                break;
+            case 'precio-desc':
+                resultado.sort(function (a, b) { return Number(b.precio) - Number(a.precio); });
+                break;
+            default:
+                resultado.sort(function (a, b) {
+                    const fa = a.createdAt ? a.createdAt.toMillis() : 0;
+                    const fb = b.createdAt ? b.createdAt.toMillis() : 0;
+                    return fb - fa;
+                });
         }
 
-        vacio.style.display = 'none';
+        return resultado;
+    }
 
-        productos.forEach(function (p) {
-            const carta = document.createElement('div');
-            carta.className = 'carta';
-            carta.setAttribute('role', 'button');
-            carta.tabIndex = 0;
+    function render() {
+        const contenedor = document.getElementById('listaProductos');
+        const vacio = document.getElementById('vacio');
+        const sinResultados = document.getElementById('sinResultados');
+        const contador = document.getElementById('contador');
 
-            const tipo = document.createElement('div');
-            tipo.className = 'carta-tipo';
-            tipo.textContent = 'Cartas de MTG';
+        const filtrados = aplicarFiltros(productosDisponibles);
 
-            const nombre = document.createElement('div');
-            nombre.className = 'carta-nombre';
-            nombre.textContent = p.nombre;
+        contenedor.innerHTML = '';
+        contador.textContent = productosDisponibles.length
+            ? 'Mostrando ' + filtrados.length + ' de ' + productosDisponibles.length + ' productos'
+            : '';
 
-            const imagen = document.createElement('div');
-            imagen.className = 'carta-imagen';
-            if (p.imagen) {
-                const img = document.createElement('img');
-                img.src = p.imagen;
-                img.alt = p.nombre;
-                imagen.appendChild(img);
-            } else {
-                imagen.textContent = 'MTG';
-            }
+        vacio.style.display = productosDisponibles.length === 0 ? 'block' : 'none';
+        sinResultados.style.display = (productosDisponibles.length > 0 && filtrados.length === 0) ? 'block' : 'none';
 
-            const descripcion = document.createElement('div');
-            descripcion.className = 'carta-descripcion';
-            descripcion.textContent = p.descripcion;
-
-            const precio = document.createElement('div');
-            precio.className = 'carta-precio';
-            precio.textContent = '$' + p.precio;
-
-            carta.appendChild(tipo);
-            carta.appendChild(nombre);
-            carta.appendChild(imagen);
-            carta.appendChild(descripcion);
-            carta.appendChild(precio);
-
-            carta.addEventListener('click', function () {
-                abrirModal(p);
-            });
-            carta.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    abrirModal(p);
-                }
-            });
-
-            contenedor.appendChild(carta);
+        filtrados.forEach(function (p) {
+            contenedor.appendChild(crearCarta(p));
         });
+    }
+
+    function crearCarta(p) {
+        const carta = document.createElement('div');
+        carta.className = 'carta';
+        carta.setAttribute('role', 'button');
+        carta.tabIndex = 0;
+
+        const tipo = document.createElement('div');
+        tipo.className = 'carta-tipo';
+        tipo.textContent = 'Cartas de MTG';
+
+        const nombre = document.createElement('div');
+        nombre.className = 'carta-nombre';
+        nombre.textContent = p.nombre;
+
+        const imagen = document.createElement('div');
+        imagen.className = 'carta-imagen';
+        if (p.imagen) {
+            const img = document.createElement('img');
+            img.src = p.imagen;
+            img.alt = p.nombre;
+            imagen.appendChild(img);
+        } else {
+            imagen.textContent = 'MTG';
+        }
+
+        const descripcion = document.createElement('div');
+        descripcion.className = 'carta-descripcion';
+        descripcion.textContent = p.descripcion;
+
+        const stock = badgeStock(p);
+
+        const precio = document.createElement('div');
+        precio.className = 'carta-precio';
+        precio.textContent = formatearPrecio(p.precio);
+
+        carta.appendChild(tipo);
+        carta.appendChild(nombre);
+        carta.appendChild(imagen);
+        carta.appendChild(descripcion);
+        carta.appendChild(stock);
+        carta.appendChild(precio);
+
+        carta.addEventListener('click', function () {
+            abrirModal(p);
+        });
+        carta.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                abrirModal(p);
+            }
+        });
+
+        return carta;
     }
 
     function abrirModal(producto) {
         const contenedor = document.getElementById('detalleModal');
-        contenedor.innerHTML = '';
+        contenedor.innerHTML = ''; 
 
         const ficha = document.createElement('div');
         ficha.className = 'ficha';
@@ -153,17 +247,29 @@
         descripcion.className = 'ficha-descripcion';
         descripcion.textContent = producto.descripcion;
 
+        const stockEtiqueta = document.createElement('div');
+        stockEtiqueta.className = 'ficha-etiqueta';
+        stockEtiqueta.textContent = 'Stock';
+
+        const stock = document.createElement('div');
+        stock.className = 'ficha-stock';
+        const stockNum = Number(producto.stock);
+        stock.textContent = (Number.isFinite(stockNum) && stockNum > 0) ? 'Disponibles: ' + stockNum : 'Sin stock';
+        stock.classList.add(Number.isFinite(stockNum) && stockNum > 0 ? 'ficha-stock-en' : 'ficha-stock-agotado');
+
         const precioEtiqueta = document.createElement('div');
         precioEtiqueta.className = 'ficha-etiqueta';
         precioEtiqueta.textContent = 'Precio';
 
         const precio = document.createElement('div');
         precio.className = 'ficha-precio';
-        precio.textContent = '$' + producto.precio;
+        precio.textContent = formatearPrecio(producto.precio);
 
         info.appendChild(tipo);
         info.appendChild(nombre);
         info.appendChild(descripcion);
+        info.appendChild(stockEtiqueta);
+        info.appendChild(stock);
         info.appendChild(precioEtiqueta);
         info.appendChild(precio);
 
@@ -182,6 +288,7 @@
         btnEliminar.onclick = async function () {
             if (confirm('¿Estás seguro de que quieres eliminar "' + producto.nombre + '"?')) {
                 try {
+                    await autenticacionAnonima;
                     await deleteDoc(doc(productosRef, producto.id));
                     cerrarModal();
                     cargarProductos();

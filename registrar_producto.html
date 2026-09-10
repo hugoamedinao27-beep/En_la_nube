@@ -27,6 +27,10 @@
             <input type="number" id="precio" name="precio" placeholder="Ej: 25000" step="0.01" min="0" required>
         </label>
         <label class="campo">
+            <span>Stock (cantidad disponible)</span>
+            <input type="number" id="stock" name="stock" placeholder="Ej: 10" step="1" min="0" required>
+        </label>
+        <label class="campo">
             <span>Imagen de la carta</span>
             <input type="file" id="imagen" name="imagen" accept="image/*">
         </label>
@@ -40,7 +44,7 @@
 </div>
 
 <script type="module">
-    import { productosRef, addDoc, serverTimestamp } from './firebaseConfig.js';
+    import { productosRef, addDoc, serverTimestamp, autenticacionAnonima } from './firebaseConfig.js';
 
     const inputImagen = document.getElementById('imagen');
     const vistaPrevia = document.getElementById('vistaPrevia');
@@ -94,10 +98,28 @@
 
         const nombre = document.getElementById('nombre').value.trim();
         const descripcion = document.getElementById('descripcion').value.trim();
-        const precio = document.getElementById('precio').value.trim();
+        const precio = Number(document.getElementById('precio').value);
+        const stock = Number(document.getElementById('stock').value);
         const archivoImagen = document.getElementById('imagen').files[0];
 
+        if (!Number.isFinite(precio) || precio < 0) {
+            boton.disabled = false;
+            boton.textContent = 'Guardar Producto';
+            mensaje.textContent = 'El precio debe ser un número mayor o igual a 0.';
+            mensaje.style.color = '#dc2626';
+            return;
+        }
+
+        if (!Number.isInteger(stock) || stock < 0) {
+            boton.disabled = false;
+            boton.textContent = 'Guardar Producto';
+            mensaje.textContent = 'El stock debe ser un número entero mayor o igual a 0.';
+            mensaje.style.color = '#dc2626';
+            return;
+        }
+
         try {
+            await autenticacionAnonima;
             let imagen = '';
             if (archivoImagen) {
                 imagen = await comprimirImagen(archivoImagen, 800, 0.7);
@@ -107,6 +129,7 @@
                 nombre: nombre,
                 descripcion: descripcion,
                 precio: precio,
+                stock: stock,
                 imagen: imagen,
                 createdAt: serverTimestamp()
             });

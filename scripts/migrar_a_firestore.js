@@ -16,7 +16,8 @@ async function migrar() {
     await productosRef.add({
       nombre: p.nombre,
       descripcion: p.descripcion,
-      precio: p.precio,
+      precio: Number(p.precio),
+      stock: Number.isInteger(Number(p.stock)) ? Number(p.stock) : 0,
       imagen: p.imagen || '',
       createdAt: FieldValue.serverTimestamp()
     });

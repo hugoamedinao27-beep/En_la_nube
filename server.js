@@ -67,12 +67,34 @@ app.get('/api/productos/:id', async function (req, res) {
   }
 });
 
+// ── Validacion de campos ──
+function validarCampos(nombre, descripcion, precio, stock) {
+  const texto = function (v) { return v !== undefined && v !== null && String(v).trim() !== ''; };
+
+  if (!texto(nombre) || !texto(descripcion)) {
+    return { error: 'Faltan nombre o descripcion' };
+  }
+
+  const precioNum = Number(precio);
+  if (!texto(precio) || !Number.isFinite(precioNum) || precioNum < 0) {
+    return { error: 'El precio debe ser un numero mayor o igual a 0' };
+  }
+
+  const stockNum = Number(stock);
+  if (!texto(stock) || !Number.isInteger(stockNum) || stockNum < 0) {
+    return { error: 'El stock debe ser un numero entero mayor o igual a 0' };
+  }
+
+  return { precio: precioNum, stock: stockNum };
+}
+
 // ── API: Crear un producto ──
 app.post('/api/productos', upload.single('imagen'), async function (req, res) {
-  const { nombre, descripcion, precio } = req.body;
+  const { nombre, descripcion } = req.body;
+  const validacion = validarCampos(nombre, descripcion, req.body.precio, req.body.stock);
 
-  if (!nombre || !descripcion || !precio) {
-    return res.status(400).json({ error: 'Faltan nombre, descripcion o precio' });
+  if (validacion.error) {
+    return res.status(400).json({ error: validacion.error });
   }
 
   const imagen = req.file ? '/Imagenes/' + req.file.filename : '';
@@ -81,7 +103,8 @@ app.post('/api/productos', upload.single('imagen'), async function (req, res) {
     const nuevoProducto = {
       nombre: nombre,
       descripcion: descripcion,
-      precio: precio,
+      precio: validacion.precio,
+      stock: validacion.stock,
       imagen: imagen,
       createdAt: FieldValue.serverTimestamp()
     };
@@ -110,10 +133,11 @@ app.delete('/api/productos/:id', async function (req, res) {
 
 // ── API: Actualizar un producto ──
 app.put('/api/productos/:id', upload.single('imagen'), async function (req, res) {
-  const { nombre, descripcion, precio } = req.body;
+  const { nombre, descripcion } = req.body;
+  const validacion = validarCampos(nombre, descripcion, req.body.precio, req.body.stock);
 
-  if (!nombre || !descripcion || !precio) {
-    return res.status(400).json({ error: 'Faltan nombre, descripcion o precio' });
+  if (validacion.error) {
+    return res.status(400).json({ error: validacion.error });
   }
 
   try {
@@ -125,7 +149,8 @@ app.put('/api/productos/:id', upload.single('imagen'), async function (req, res)
     const datosActualizados = {
       nombre: nombre,
       descripcion: descripcion,
-      precio: precio
+      precio: validacion.precio,
+      stock: validacion.stock
     };
 
     if (req.file) {
