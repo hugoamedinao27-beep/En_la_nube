@@ -1,3 +1,13 @@
 node_modules/
 package-lock.json
 *.log
+
+# SECRETO: credenciales de cuenta de servicio de Firebase.
+# Nunca subir al repositorio. Se regenera en Firebase Console.
+serviceAccountKey.json
+
+# Archivos locales de entorno
+.env
+firebase-debug.log
+firestore-debug.log
+firestore.emulator.*

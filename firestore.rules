@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Colección "productos" = catálogo público de la tienda.
+    // Justificación:
+    //  - READER público (allow read): la tienda es de acceso abierto; el listado,
+    //    detalle e imágenes deben verse sin login (github pages).
+    //  - WRITER restringido (allow create/update/delete si request.auth != null):
+    //    impide modificar el catálogo desde fuera. En el frontend este proyecto
+    //    usa Firebase Auth anónimo: cualquier usuario del navegador obtiene un
+    //    token anónimo, por lo que la app funciona igual, pero las escrituras ya
+    //    no son "clave en la nube" abierta a cualquiera.
+    match /productos/{productoId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+  }
+}
