@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="card">
+    <h1>Iniciar Sesión</h1>
+    <h2>Acceso de administrador</h2>
+    <p>Ingresa con tu cuenta para poder registrar, editar o eliminar productos.</p>
+
+    <form id="formLogin" class="form">
+        <label class="campo">
+            <span>Email</span>
+            <input type="email" id="email" name="email" placeholder="tu@email.com" required>
+        </label>
+        <label class="campo">
+            <span>Contraseña</span>
+            <input type="password" id="password" name="password" placeholder="••••••••" required>
+        </label>
+        <button type="submit" id="btnLogin" class="btn btn-ver">Ingresar</button>
+    </form>
+
+    <p id="mensaje" class="mensaje"></p>
+
+    <a href="index.html" class="btn btn-volver">Volver al inicio</a>
+</div>
+
+<script type="module">
+    import { auth, signInWithEmailAndPassword } from './firebaseConfig.js';
+
+    const form = document.getElementById('formLogin');
+    const mensaje = document.getElementById('mensaje');
+    const boton = document.getElementById('btnLogin');
+
+    const destino = new URLSearchParams(window.location.search).get('destino') || 'index.html';
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        mensaje.textContent = '';
+        mensaje.style.color = '';
+        boton.disabled = true;
+        boton.textContent = 'Ingresando...';
+
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            location.href = destino;
+        } catch (error) {
+            mensaje.textContent = 'Email o contraseña incorrectos.';
+            mensaje.style.color = '#dc2626';
+        } finally {
+            boton.disabled = false;
+            boton.textContent = 'Ingresar';
+        }
+    });
+</script>
+
+</body>
+</html>

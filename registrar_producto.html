@@ -44,7 +44,13 @@
 </div>
 
 <script type="module">
-    import { productosRef, addDoc, serverTimestamp, autenticacionAnonima } from './firebaseConfig.js';
+    import { productosRef, addDoc, serverTimestamp, usuarioActual } from './firebaseConfig.js';
+
+    usuarioActual.then(function (user) {
+        if (!user) {
+            location.href = 'login.html?destino=' + encodeURIComponent(window.location.pathname + window.location.search);
+        }
+    });
 
     const inputImagen = document.getElementById('imagen');
     const vistaPrevia = document.getElementById('vistaPrevia');
@@ -119,7 +125,6 @@
         }
 
         try {
-            await autenticacionAnonima;
             let imagen = '';
             if (archivoImagen) {
                 imagen = await comprimirImagen(archivoImagen, 800, 0.7);

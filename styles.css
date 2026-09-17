@@ -109,6 +109,21 @@ button:hover {
     background: #475569;
 }
 
+.btn-login {
+    background: #0891b2;
+}
+
+.btn-login:hover {
+    background: #0e7490;
+}
+
+.usuario-sesion {
+    font-size: 13px;
+    color: #555555;
+    text-align: center;
+    margin: 0;
+}
+
 .form {
     display: flex;
     flex-direction: column;

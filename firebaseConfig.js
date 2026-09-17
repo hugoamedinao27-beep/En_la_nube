@@ -1,7 +1,7 @@
 // Configuracion de Firebase para el frontend (funciona en GitHub Pages)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBnmn0MMCg6nlH09gyXJvFMSGh-7y2UxGI",
@@ -18,13 +18,23 @@ const db = getFirestore(app);
 const productosRef = collection(db, 'productos');
 const auth = getAuth(app);
 
-// Las reglas de Firestore exigen sesion para escribir. Usamos login anonimo:
-// cualquier visitante puede ver (lectura publica) y escribir desde el navegador,
-// pero el acceso ya no es "escritura abierta" sin ninguna credencial.
-// Esta promesa resuelve incluso si el login anonimo falla, para no romper UI.
-const autenticacionAnonima = signInAnonymously(auth).catch(function (error) {
-  console.warn('Login anonimo no disponible:', error.code);
-  return null;
+// Las reglas de Firestore exigen sesion para escribir. La app usa login por
+// email y contrasena (Firebase Auth). Cualquier visitante puede ver los
+// productos (lectura publica), pero para registrar, editar o eliminar hace
+// falta una cuenta de administrador.
+//
+// Esta promesa resuelve con el usuario logueado (o null). Si queda una sesion
+// anonima de una version vieja de la app, la cierra y resuelve con null, para
+// que nadie pueda escribir sin cuenta real.
+const usuarioActual = new Promise(function (resolver) {
+  onAuthStateChanged(auth, function (user) {
+    if (user && user.isAnonymous) {
+      signOut(auth);
+      resolver(null);
+    } else {
+      resolver(user);
+    }
+  });
 });
 
-export { db, productosRef, collection, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, autenticacionAnonima };
+export { db, productosRef, collection, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, usuarioActual };

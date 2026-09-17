@@ -15,11 +15,44 @@
     <p>
         Tienda dedicada a la venta de cartas de Magic: The Gathering y otros juegos de cartas coleccionables.
     </p>
-    <div class="botones">
+    <div class="botones" id="botonesInvitado">
+        <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
+        <a href="login.html" class="btn btn-login">Iniciar Sesión</a>
+    </div>
+    <div class="botones" id="botonesAdmin" style="display: none;">
+        <p id="usuarioSesion" class="usuario-sesion"></p>
         <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
         <a href="registrar_producto.html" class="btn btn-registrar">Registrar Producto</a>
+        <button type="button" id="btnCerrarSesion" class="btn btn-login">Cerrar Sesión</button>
     </div>
 </div>
+
+<script type="module">
+    import { auth, onAuthStateChanged, signOut } from './firebaseConfig.js';
+
+    const botonesInvitado = document.getElementById('botonesInvitado');
+    const botonesAdmin = document.getElementById('botonesAdmin');
+    const usuarioSesion = document.getElementById('usuarioSesion');
+
+    onAuthStateChanged(auth, function (user) {
+        if (user && !user.isAnonymous) {
+            botonesInvitado.style.display = 'none';
+            botonesAdmin.style.display = 'flex';
+            usuarioSesion.textContent = 'Sesión iniciada: ' + user.email;
+        } else {
+            botonesInvitado.style.display = 'flex';
+            botonesAdmin.style.display = 'none';
+        }
+    });
+
+    document.getElementById('btnCerrarSesion').addEventListener('click', function () {
+        signOut(auth).then(function () {
+            location.reload();
+        }).catch(function () {
+            alert('Error al cerrar sesión.');
+        });
+    });
+</script>
 
 </body>
 </html>

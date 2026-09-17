@@ -51,9 +51,14 @@
 </div>
 
 <script type="module">
-    import { productosRef, collection, getDocs, query, orderBy, deleteDoc, doc, autenticacionAnonima } from './firebaseConfig.js';
+    import { productosRef, collection, getDocs, query, orderBy, deleteDoc, doc, auth, onAuthStateChanged } from './firebaseConfig.js';
 
     let productosDisponibles = [];
+    let esAdmin = false;
+
+    onAuthStateChanged(auth, function (user) {
+        esAdmin = user && !user.isAnonymous;
+    });
 
     window.addEventListener('DOMContentLoaded', function () {
         cargarProductos();
@@ -281,6 +286,9 @@
         const btnModificar = document.getElementById('btnModificarModal');
         const btnEliminar = document.getElementById('btnEliminarModal');
 
+        btnModificar.style.display = esAdmin ? '' : 'none';
+        btnEliminar.style.display = esAdmin ? '' : 'none';
+
         btnModificar.onclick = function () {
             location.href = 'editar_producto.html?id=' + producto.id;
         };
@@ -288,7 +296,6 @@
         btnEliminar.onclick = async function () {
             if (confirm('¿Estás seguro de que quieres eliminar "' + producto.nombre + '"?')) {
                 try {
-                    await autenticacionAnonima;
                     await deleteDoc(doc(productosRef, producto.id));
                     cerrarModal();
                     cargarProductos();

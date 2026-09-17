@@ -48,7 +48,13 @@
 </div>
 
 <script type="module">
-    import { productosRef, doc, getDoc, updateDoc, autenticacionAnonima } from './firebaseConfig.js';
+    import { productosRef, doc, getDoc, updateDoc, usuarioActual } from './firebaseConfig.js';
+
+    usuarioActual.then(function (user) {
+        if (!user) {
+            location.href = 'login.html?destino=' + encodeURIComponent(window.location.pathname + window.location.search);
+        }
+    });
 
     const params = new URLSearchParams(window.location.search);
     const productoId = params.get('id');
@@ -163,7 +169,6 @@
         }
 
         try {
-            await autenticacionAnonima;
 
             const datosActualizados = {
                 nombre: nombre,
