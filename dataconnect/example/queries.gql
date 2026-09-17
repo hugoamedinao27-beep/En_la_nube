@@ -1,0 +1,120 @@
+mutation CreateUser @auth(level: USER) {
+  user_insert(data: {
+    id_expr: "auth.uid",
+    email: "user@example.com",
+    createdAt_expr: "request.time",
+    displayName: "New User"
+  })
+}
+
+mutation UpdateUser @auth(level: USER) {
+  user_update(key: {id_expr: "auth.uid"}, data: {displayName: "Updated Name"})
+}
+
+mutation DeleteUser @auth(level: USER) {
+  user_delete(key: {id_expr: "auth.uid"})
+}
+
+query GetUser @auth(level: USER) {
+  user(id_expr: "auth.uid") { email displayName }
+}
+
+query ListUsers @auth(level: PUBLIC, insecureReason: "Public profiles are permitted for discovery.") {
+  users { displayName avatarUrl }
+}
+
+mutation CreateIntegration @auth(level: USER) {
+  integration_insert(data: {
+    providerName: "Google",
+    status: "active",
+    userId_expr: "auth.uid"
+  })
+}
+
+mutation UpdateIntegration @auth(level: USER) {
+  integration_update(key: {id: "00000000-0000-0000-0000-000000000000"}, data: {status: "inactive"})
+}
+
+mutation DeleteIntegration @auth(level: USER) {
+  integration_delete(key: {id: "00000000-0000-0000-0000-000000000000"})
+}
+
+query GetIntegration @auth(level: USER) {
+  integration(id: "00000000-0000-0000-0000-000000000000") { providerName status }
+}
+
+query ListIntegrations @auth(level: USER) {
+  integrations(where: {userId: {eq_expr: "auth.uid"}}) { providerName status }
+}
+
+mutation CreateWorkflow @auth(level: USER) {
+  workflow_insert(data: {
+    name: "Email Automation",
+    triggerEvent: "signup",
+    actionTarget: "sendgrid",
+    userId_expr: "auth.uid"
+  })
+}
+
+mutation UpdateWorkflow @auth(level: USER) {
+  workflow_update(key: {id: "00000000-0000-0000-0000-000000000000"}, data: {isActive: true})
+}
+
+mutation DeleteWorkflow @auth(level: USER) {
+  workflow_delete(key: {id: "00000000-0000-0000-0000-000000000000"})
+}
+
+query GetWorkflow @auth(level: USER) {
+  workflow(id: "00000000-0000-0000-0000-000000000000") { name isActive }
+}
+
+query ListWorkflows @auth(level: USER) {
+  workflows(where: {userId: {eq_expr: "auth.uid"}}) { name triggerEvent }
+}
+
+mutation CreateExecutionLog @auth(level: USER) {
+  executionLog_insert(data: {
+    status: "success",
+    timestamp_expr: "request.time",
+    workflowId: "00000000-0000-0000-0000-000000000000"
+  })
+}
+
+mutation UpdateExecutionLog @auth(level: USER) {
+  executionLog_update(key: {id: "00000000-0000-0000-0000-000000000000"}, data: {status: "failed", errorMessage: "Timeout"})
+}
+
+mutation DeleteExecutionLog @auth(level: USER) {
+  executionLog_delete(key: {id: "00000000-0000-0000-0000-000000000000"})
+}
+
+query GetExecutionLog @auth(level: USER) {
+  executionLog(id: "00000000-0000-0000-0000-000000000000") { status timestamp }
+}
+
+query ListExecutionLogs @auth(level: USER) {
+  executionLogs(where: {workflow: {userId: {eq_expr: "auth.uid"}}}) { status errorMessage }
+}
+
+mutation CreateCredential @auth(level: USER) {
+  credential_insert(data: {
+    integrationId: "00000000-0000-0000-0000-000000000000",
+    encryptedToken: "secret_token"
+  })
+}
+
+mutation UpdateCredential @auth(level: USER) {
+  credential_update(key: {id: "00000000-0000-0000-0000-000000000000"}, data: {encryptedToken: "new_secret"})
+}
+
+mutation DeleteCredential @auth(level: USER) {
+  credential_delete(key: {id: "00000000-0000-0000-0000-000000000000"})
+}
+
+query GetCredential @auth(level: USER) {
+  credential(id: "00000000-0000-0000-0000-000000000000") { expiresAt }
+}
+
+query ListCredentials @auth(level: USER) {
+  credentials(where: {integration: {userId: {eq_expr: "auth.uid"}}}) { encryptedToken }
+}

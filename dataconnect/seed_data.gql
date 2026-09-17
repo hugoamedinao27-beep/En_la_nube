@@ -1,0 +1,20 @@
+[{
+  "status": {
+    "message": "Generating initial query..."
+  }
+}
+,
+{
+  "error": {
+    "code": 429,
+    "message": "Vertex AI StreamGenerateContent RPC failed: generic::resource_exhausted: Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.RequestInfo",
+        "requestId": "d76fa9d076dfb59b"
+      }
+    ]
+  }
+}
+]

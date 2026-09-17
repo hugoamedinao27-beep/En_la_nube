@@ -1,0 +1,35 @@
+type User @table {
+  email: String!
+  createdAt: Timestamp!
+  displayName: String
+  avatarUrl: String
+}
+
+type Integration @table {
+  providerName: String!
+  status: String!
+  user: User!
+  lastSyncedAt: Timestamp
+}
+
+type Workflow @table {
+  name: String!
+  triggerEvent: String!
+  actionTarget: String!
+  user: User!
+  isActive: Boolean
+  description: String
+}
+
+type ExecutionLog @table {
+  status: String!
+  timestamp: Timestamp!
+  workflow: Workflow!
+  errorMessage: String
+}
+
+type Credential @table {
+  integration: Integration!
+  encryptedToken: String!
+  expiresAt: Timestamp
+}
