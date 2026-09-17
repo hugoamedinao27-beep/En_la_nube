@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrarse</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="card">
+    <h1>Crear cuenta</h1>
+    <h2>Registro para clientes</h2>
+    <p>Registrate para poder dejar pedidos de cartas en la tienda.</p>
+
+    <form id="formRegistro" class="form">
+        <label class="campo">
+            <span>Email</span>
+            <input type="email" id="email" name="email" placeholder="tu@email.com" required>
+        </label>
+        <label class="campo">
+            <span>Contraseña</span>
+            <input type="password" id="password" name="password" placeholder="Mínimo 6 caracteres" minlength="6" required>
+        </label>
+        <label class="campo">
+            <span>Confirmar contraseña</span>
+            <input type="password" id="confirmar" name="confirmar" placeholder="Repetí la contraseña" minlength="6" required>
+        </label>
+        <button type="submit" id="btnRegistrar" class="btn btn-registrar">Crear cuenta</button>
+    </form>
+
+    <p id="mensaje" class="mensaje"></p>
+
+    <p style="text-align:center;">¿Ya tenés cuenta? <a href="login.html" style="color:#2563eb;">Iniciá sesión</a></p>
+    <a href="index.html" class="btn btn-volver">Volver al inicio</a>
+</div>
+
+<script type="module">
+    import { auth, createUserWithEmailAndPassword } from './firebaseConfig.js';
+
+    const form = document.getElementById('formRegistro');
+    const mensaje = document.getElementById('mensaje');
+    const boton = document.getElementById('btnRegistrar');
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        mensaje.textContent = '';
+        mensaje.style.color = '';
+
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmar = document.getElementById('confirmar').value;
+
+        if (password !== confirmar) {
+            mensaje.textContent = 'Las contraseñas no coinciden.';
+            mensaje.style.color = '#dc2626';
+            return;
+        }
+
+        boton.disabled = true;
+        boton.textContent = 'Creando cuenta...';
+
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            location.href = 'index.html';
+        } catch (error) {
+            if (error.code === 'auth/email-already-in-use') {
+                mensaje.textContent = 'Ese email ya está registrado. Probá iniciar sesión.';
+            } else if (error.code === 'auth/weak-password') {
+                mensaje.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+            } else if (error.code === 'auth/invalid-email') {
+                mensaje.textContent = 'El email no es válido.';
+            } else {
+                mensaje.textContent = 'Error al crear la cuenta: ' + error.message;
+            }
+            mensaje.style.color = '#dc2626';
+        } finally {
+            boton.disabled = false;
+            boton.textContent = 'Crear cuenta';
+        }
+    });
+</script>
+
+</body>
+</html>

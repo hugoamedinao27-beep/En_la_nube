@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ver Pedidos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="card card-lista">
+    <h1>Ver Pedidos</h1>
+    <h2>Pedidos de los clientes</h2>
+    <p>Aqui se muestran los pedidos que dejaron los clientes registrados.</p>
+
+    <div id="listaPedidos" class="pedidos"></div>
+
+    <p id="vacio" class="mensaje" style="display:none;">No hay pedidos todavia.</p>
+
+    <a href="index.html" class="btn btn-volver">Volver al inicio</a>
+</div>
+
+<script type="module">
+    import { db, collection, getDocs, query, orderBy, updateDoc, doc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
+
+    obtenerEsAdmin().then(function (admin) {
+        if (!admin) {
+            location.href = 'index.html';
+            return;
+        }
+        cargarPedidos();
+    });
+
+    function formatearFecha(fecha) {
+        if (!fecha) return '-';
+        if (typeof fecha.toDate === 'function') {
+            return fecha.toDate().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+        }
+        return String(fecha);
+    }
+
+    function formatearPrecio(precio) {
+        const numero = Number(precio);
+        if (!Number.isFinite(numero)) return '$' + precio;
+        return numero.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    function cargarPedidos() {
+        const consulta = query(collection(db, 'pedidos'), orderBy('fecha', 'desc'));
+        getDocs(consulta)
+            .then(function (snapshot) {
+                const contenedor = document.getElementById('listaPedidos');
+                const vacio = document.getElementById('vacio');
+                contenedor.innerHTML = '';
+
+                if (snapshot.empty) {
+                    vacio.style.display = 'block';
+                    return;
+                }
+
+                vacio.style.display = 'none';
+                snapshot.forEach(function (docSnap) {
+                    contenedor.appendChild(crearPedido(docSnap.id, docSnap.data()));
+                });
+            })
+            .catch(function (error) {
+                document.getElementById('vacio').textContent = 'No se pudieron cargar los pedidos: ' + error.message;
+                document.getElementById('vacio').style.display = 'block';
+            });
+    }
+
+    function crearPedido(id, p) {
+        const pedido = document.createElement('div');
+        pedido.className = 'pedido';
+
+        const info = document.createElement('div');
+        info.className = 'pedido-info';
+
+        const nombre = document.createElement('div');
+        nombre.className = 'pedido-nombre';
+        nombre.textContent = p.productoNombre + '  x' + p.cantidad;
+
+        const cliente = document.createElement('div');
+        cliente.className = 'pedido-cliente';
+        cliente.textContent = p.usuarioEmail || 'Cliente';
+
+        const fecha = document.createElement('div');
+        fecha.className = 'pedido-fecha';
+        fecha.textContent = formatearFecha(p.fecha);
+
+        const precio = document.createElement('div');
+        precio.className = 'pedido-precio';
+        precio.textContent = formatearPrecio(Number(p.productoPrecio) * Number(p.cantidad));
+
+        info.appendChild(nombre);
+        info.appendChild(cliente);
+        info.appendChild(fecha);
+        info.appendChild(precio);
+
+        const estado = document.createElement('div');
+        estado.className = 'pedido-estado estado-' + (p.estado || 'pendiente');
+        estado.textContent = (p.estado || 'pendiente').charAt(0).toUpperCase() + (p.estado || 'pendiente').slice(1);
+
+        const acciones = document.createElement('div');
+        acciones.className = 'pedido-acciones';
+
+        const btnEntregado = document.createElement('button');
+        btnEntregado.type = 'button';
+        btnEntregado.className = 'btn-accion btn-editar';
+        btnEntregado.textContent = 'Entregado';
+        btnEntregado.disabled = p.estado === 'entregado';
+        btnEntregado.onclick = function () {
+            actualizarEstado(id, 'entregado');
+        };
+
+        const btnCancelado = document.createElement('button');
+        btnCancelado.type = 'button';
+        btnCancelado.className = 'btn-accion btn-eliminar';
+        btnCancelado.textContent = 'Cancelar';
+        btnCancelado.disabled = p.estado === 'cancelado';
+        btnCancelado.onclick = function () {
+            actualizarEstado(id, 'cancelado');
+        };
+
+        acciones.appendChild(btnEntregado);
+        acciones.appendChild(btnCancelado);
+
+        pedido.appendChild(info);
+        pedido.appendChild(estado);
+        pedido.appendChild(acciones);
+
+        return pedido;
+    }
+
+    function actualizarEstado(id, nuevoEstado) {
+        updateDoc(doc(db, 'pedidos', id), {
+            estado: nuevoEstado,
+            actualizado: serverTimestamp()
+        }).then(function () {
+            cargarPedidos();
+        }).catch(function (error) {
+            alert('Error al actualizar el pedido: ' + error.message);
+        });
+    }
+</script>
+
+</body>
+</html>

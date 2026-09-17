@@ -521,3 +521,88 @@ button:hover {
     padding: 8px 18px;
     border-radius: 6px;
 }
+
+.btn-pedir {
+    background: #7c3aed;
+}
+
+.btn-pedir:hover {
+    background: #6d28d9;
+}
+
+/* ── Pedidos ── */
+.pedidos {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0 0 20px;
+}
+
+.pedido {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    background: #fafafa;
+    border: 1px solid #dddddd;
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+.pedido-info {
+    flex: 1;
+    min-width: 200px;
+    color: #444444;
+}
+
+.pedido-nombre {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111111;
+}
+
+.pedido-cliente,
+.pedido-fecha {
+    font-size: 13px;
+    color: #666666;
+}
+
+.pedido-precio {
+    font-size: 15px;
+    font-weight: 700;
+    color: #caa64c;
+    margin-top: 4px;
+}
+
+.pedido-estado {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+.estado-pendiente {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.estado-entregado {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.estado-cancelado {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.pedido-acciones {
+    display: flex;
+    gap: 8px;
+}
+
+.pedido-acciones button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}

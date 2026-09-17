@@ -44,11 +44,11 @@
 </div>
 
 <script type="module">
-    import { productosRef, addDoc, serverTimestamp, usuarioActual } from './firebaseConfig.js';
+    import { productosRef, addDoc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
 
-    usuarioActual.then(function (user) {
-        if (!user) {
-            location.href = 'login.html?destino=' + encodeURIComponent(window.location.pathname + window.location.search);
+    obtenerEsAdmin().then(function (admin) {
+        if (!admin) {
+            location.href = 'index.html';
         }
     });
 

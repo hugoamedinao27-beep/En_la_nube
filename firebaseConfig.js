@@ -1,7 +1,7 @@
 // Configuracion de Firebase para el frontend (funciona en GitHub Pages)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBnmn0MMCg6nlH09gyXJvFMSGh-7y2UxGI",
@@ -18,10 +18,9 @@ const db = getFirestore(app);
 const productosRef = collection(db, 'productos');
 const auth = getAuth(app);
 
-// Las reglas de Firestore exigen sesion para escribir. La app usa login por
-// email y contrasena (Firebase Auth). Cualquier visitante puede ver los
-// productos (lectura publica), pero para registrar, editar o eliminar hace
-// falta una cuenta de administrador.
+// Cualquiera puede ver los productos (lectura publica). Para escribir
+// (productos) o gestionar pedidos hace falta ser admin. La gente externa
+// puede registrarse con email/contraseña, ver los productos y dejar pedidos.
 //
 // Esta promesa resuelve con el usuario logueado (o null). Si queda una sesion
 // anonima de una version vieja de la app, la cierra y resuelve con null, para
@@ -37,4 +36,18 @@ const usuarioActual = new Promise(function (resolver) {
   });
 });
 
-export { db, productosRef, collection, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, usuarioActual };
+// Devuelve true si el usuario logueado figura en la coleccion "admins".
+// Los admins se dan de alta con scripts/agregar_admin.js o en la consola.
+async function obtenerEsAdmin() {
+  const user = await usuarioActual;
+  if (!user || user.isAnonymous) return false;
+  try {
+    const snap = await getDoc(doc(db, 'admins', user.uid));
+    return snap.exists();
+  } catch (error) {
+    console.warn('No se pudo verificar el rol de admin:', error.code || error.message);
+    return false;
+  }
+}
+
+export { db, productosRef, collection, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, usuarioActual, obtenerEsAdmin };
