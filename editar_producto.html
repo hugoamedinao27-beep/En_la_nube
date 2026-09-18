@@ -62,6 +62,7 @@
         <p id="avisoScryfall" class="aviso-scryfall">Imagen automatica de Scryfall: se descargara al guardar. Si subis tu propia imagen, esa se usa.</p>
         <img id="vistaPrevia" class="vista-previa" alt="Vista previa">
         <input type="hidden" id="imagenUrl" value="">
+        <input type="hidden" id="coloresGuardar" value="">
         <button type="submit" id="btnActualizar" class="btn btn-editar">Actualizar Producto</button>
     </form>
 
@@ -233,6 +234,19 @@
         return partes.join('\n');
     }
 
+    function coloresDeCarta(carta) {
+        if (carta.card_faces && carta.card_faces.length > 0) {
+            const colores = [];
+            carta.card_faces.forEach(function (cara) {
+                (cara.colors || []).forEach(function (c) {
+                    if (colores.indexOf(c) === -1) colores.push(c);
+                });
+            });
+            return colores;
+        }
+        return (carta.colors || []).slice();
+    }
+
     function buscarCartas(termino) {
         estadoBusqueda.textContent = 'Buscando...';
         resultadosBusqueda.innerHTML = '';
@@ -323,6 +337,7 @@
 
         document.getElementById('nombre').value = cara.name || carta.name;
         document.getElementById('descripcion').value = construirDescripcion(carta);
+        document.getElementById('coloresGuardar').value = JSON.stringify(coloresDeCarta(carta));
 
         const imagenUrl = obtenerImagenCarta(carta, 'normal');
         inputImagenUrl.value = imagenUrl;
@@ -386,6 +401,15 @@
                 precio: precio,
                 stock: stock
             };
+
+            const coloresCrudo = document.getElementById('coloresGuardar').value;
+            if (coloresCrudo) {
+                try {
+                    datosActualizados.colores = JSON.parse(coloresCrudo);
+                } catch (error) {
+                    // se ignora si el valor no es valido
+                }
+            }
 
             if (archivoImagen) {
                 datosActualizados.imagen = await comprimirImagen(archivoImagen, 800, 0.7);

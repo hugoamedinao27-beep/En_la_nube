@@ -31,9 +31,25 @@
                 <option value="precio-asc">Precio (menor a mayor)</option>
                 <option value="precio-desc">Precio (mayor a menor)</option>
             </select>
+            <select id="filtroColor" class="campo-select">
+                <option value="">Todos los colores</option>
+                <option value="W">Blanco</option>
+                <option value="U">Azul</option>
+                <option value="B">Negro</option>
+                <option value="R">Rojo</option>
+                <option value="G">Verde</option>
+                <option value="multicolor">Multicolor</option>
+                <option value="incoloro">Incoloro / Sin color</option>
+            </select>
             <label class="solo-stock">
                 <input type="checkbox" id="soloStock"> Solo en stock
             </label>
+        </div>
+        <div class="filtros-opciones filtros-precio">
+            <span class="etiqueta-precio">Precio:</span>
+            <input type="number" id="precioMin" class="campo-precio" placeholder="Minimo" min="0" step="1">
+            <span class="etiqueta-precio">a</span>
+            <input type="number" id="precioMax" class="campo-precio" placeholder="Maximo" min="0" step="1">
         </div>
     </div>
 
@@ -106,10 +122,16 @@
         const busqueda = document.getElementById('busqueda');
         const orden = document.getElementById('orden');
         const soloStock = document.getElementById('soloStock');
+        const filtroColor = document.getElementById('filtroColor');
+        const precioMin = document.getElementById('precioMin');
+        const precioMax = document.getElementById('precioMax');
 
         busqueda.addEventListener('input', render);
         orden.addEventListener('change', render);
         soloStock.addEventListener('change', render);
+        filtroColor.addEventListener('change', render);
+        precioMin.addEventListener('input', render);
+        precioMax.addEventListener('input', render);
     });
 
     function cargarProductos() {
@@ -152,11 +174,30 @@
         const termino = document.getElementById('busqueda').value.trim().toLowerCase();
         const soloStock = document.getElementById('soloStock').checked;
         const orden = document.getElementById('orden').value;
+        const colorSel = document.getElementById('filtroColor').value;
+        const precioMin = document.getElementById('precioMin').value;
+        const precioMax = document.getElementById('precioMax').value;
+        const minPrecio = precioMin === '' ? null : Number(precioMin);
+        const maxPrecio = precioMax === '' ? null : Number(precioMax);
 
         let resultado = lista.filter(function (p) {
             const coincideTexto = !termino || (p.nombre || '').toLowerCase().includes(termino) || (p.descripcion || '').toLowerCase().includes(termino);
             const coincideStock = !soloStock || Number(p.stock) > 0;
-            return coincideTexto && coincideStock;
+
+            let coincideColor = true;
+            if (colorSel) {
+                const colores = Array.isArray(p.colores) ? p.colores : [];
+                if (colorSel === 'incoloro') coincideColor = colores.length === 0;
+                else if (colorSel === 'multicolor') coincideColor = colores.length > 1;
+                else coincideColor = colores.indexOf(colorSel) !== -1;
+            }
+
+            const precio = Number(p.precio);
+            const numerico = Number.isFinite(precio);
+            const coincideMin = minPrecio === null || (numerico && precio >= minPrecio);
+            const coincideMax = maxPrecio === null || (numerico && precio <= maxPrecio);
+
+            return coincideTexto && coincideStock && coincideColor && coincideMin && coincideMax;
         });
 
         switch (orden) {

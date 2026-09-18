@@ -461,6 +461,33 @@ body.pagina-ficha {
     cursor: pointer;
 }
 
+.filtros-precio {
+    justify-content: flex-start;
+}
+
+.etiqueta-precio {
+    font-size: 13px;
+    color: #333333;
+}
+
+.campo-precio {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 10px;
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+    outline: none;
+    box-sizing: border-box;
+    width: 110px;
+    background: #ffffff;
+    color: #333333;
+}
+
+.campo-precio:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px #2563eb;
+}
+
 .contador {
     font-size: 12px;
     color: #666666;
