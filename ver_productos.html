@@ -71,7 +71,7 @@
 </div>
 
 <script type="module">
-    import { productosRef, collection, getDocs, query, orderBy, deleteDoc, doc, auth, onAuthStateChanged, db, addDoc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
+    import { productosRef, collection, getDocs, query, orderBy, deleteDoc, doc, auth, onAuthStateChanged, db, serverTimestamp, runTransaction, obtenerEsAdmin } from './firebaseConfig.js';
 
     let productosDisponibles = [];
     let esAdmin = false;
@@ -497,7 +497,37 @@
     }
 
     // ── PDF ──
-    function generarPDF(items, clienteEmail, idPedido) {
+    function cargarImagenParaPDF(src) {
+        return new Promise(function (resolver) {
+            if (!src) {
+                return resolver('');
+            }
+            if (String(src).indexOf('data:') === 0) {
+                return resolver(String(src));
+            }
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                canvas.getContext('2d').drawImage(img, 0, 0);
+                resolver(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.onerror = function () {
+                resolver('');
+            };
+            img.src = src;
+        });
+    }
+
+    function formatoImagen(dataUrl) {
+        if (/^data:image\/png/i.test(dataUrl)) return 'PNG';
+        if (/^data:image\/webp/i.test(dataUrl)) return 'WEBP';
+        return 'JPEG';
+    }
+
+    async function generarPDF(items, clienteEmail, idPedido) {
         const doc = new window.jspdf.jsPDF();
 
         doc.setFontSize(18);
@@ -510,22 +540,36 @@
         let y = 52;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.text('Carta', 14, y);
+        doc.text('Carta', 32, y);
         doc.text('Cant.', 150, y);
         doc.text('Precio', 165, y);
         doc.setFont('helvetica', 'normal');
-        y += 6;
+        y += 8;
 
-        items.forEach(function (item) {
-            if (y > 270) {
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+
+            if (y > 265) {
                 doc.addPage();
                 y = 20;
             }
-            doc.text(String(item.nombre).slice(0, 55), 14, y);
+
+            const dataUrl = await cargarImagenParaPDF(item.imagen);
+            if (dataUrl) {
+                doc.addImage(dataUrl, formatoImagen(dataUrl), 14, y - 15, 12, 17);
+            }
+
+            doc.text(String(item.nombre).slice(0, 45), 32, y);
             doc.text(String(item.cantidad), 150, y);
             doc.text(formatearPrecio(Number(item.precio)), 165, y);
-            y += 6;
-        });
+            if (dataUrl) {
+                doc.setFontSize(8);
+                doc.text(String(item.nombre).slice(45, 90), 32, y + 4);
+                doc.setFontSize(10);
+            }
+
+            y += 20;
+        }
 
         y += 4;
         doc.setFont('helvetica', 'bold');
@@ -537,7 +581,7 @@
     }
 
     // ── Finalizar pedido ──
-    function finalizarPedido() {
+    async function finalizarPedido() {
         const carrito = obtenerCarrito();
         if (carrito.length === 0) {
             alert('El carrito está vacío.');
@@ -550,31 +594,66 @@
             return;
         }
 
-        const items = carrito.map(function (item) {
-            return {
-                productoId: item.id,
-                productoNombre: item.nombre,
-                productoPrecio: item.precio,
-                cantidad: item.cantidad
-            };
-        });
+        const btnFinalizar = document.getElementById('btnFinalizarPedido');
+        btnFinalizar.disabled = true;
+        btnFinalizar.textContent = 'Procesando...';
 
-        addDoc(collection(db, 'pedidos'), {
-            items: items,
-            total: items.reduce(function (t, i) { return t + Number(i.productoPrecio) * Number(i.cantidad); }, 0),
-            usuarioId: user.uid,
-            usuarioEmail: user.email,
-            estado: 'pendiente',
-            fecha: serverTimestamp()
-        }).then(function (docRef) {
+        try {
+            const pedidoRef = doc(collection(db, 'pedidos'));
+            let items = [];
+
+            await runTransaction(db, async function (tx) {
+                items = [];
+
+                for (const item of carrito) {
+                    const prodRef = doc(productosRef, item.id);
+                    const prodSnap = await tx.get(prodRef);
+
+                    if (!prodSnap.exists()) {
+                        throw new Error('La carta "' + item.nombre + '" ya no está disponible.');
+                    }
+
+                    const stock = Number(prodSnap.data().stock) || 0;
+                    const cantidad = Number(item.cantidad);
+
+                    if (stock < cantidad) {
+                        throw new Error('Stock insuficiente de "' + item.nombre + '". Quedan ' + stock + ' disponibles.');
+                    }
+
+                    await tx.update(prodRef, { stock: stock - cantidad });
+
+                    items.push({
+                        productoId: item.id,
+                        productoNombre: item.nombre,
+                        productoPrecio: Number(item.precio),
+                        cantidad: cantidad
+                    });
+                }
+
+                const total = items.reduce(function (t, i) { return t + Number(i.productoPrecio) * Number(i.cantidad); }, 0);
+
+                await tx.set(pedidoRef, {
+                    items: items,
+                    total: total,
+                    usuarioId: user.uid,
+                    usuarioEmail: user.email,
+                    estado: 'pendiente',
+                    fecha: serverTimestamp()
+                });
+            });
+
             guardarCarrito([]);
             renderCarrito();
             cerrarCarrito();
-            generarPDF(items, user.email, docRef.id);
-            alert('Pedido registrado. Se descargó el PDF con tus cartas.');
-        }).catch(function (error) {
+            cargarProductos();
+            generarPDF(items, user.email, pedidoRef.id);
+            alert('Pedido registrado. Se descontó el stock y se descargó el PDF.');
+        } catch (error) {
             alert('Error al registrar el pedido: ' + error.message);
-        });
+        } finally {
+            btnFinalizar.disabled = false;
+            btnFinalizar.textContent = 'Finalizar pedido';
+        }
     }
 
     function abrirCarrito() {

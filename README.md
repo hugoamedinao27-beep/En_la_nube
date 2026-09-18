@@ -50,8 +50,10 @@ En `ver_productos.html`, cualquier persona puede ir agregando cartas a un carrit
 
 1. Si no hay sesion, pide iniciar sesion o crear cuenta.
 2. Guarda el pedido completo en Firestore (lo ve el admin en `ver_pedidos.html`).
-3. Genera y descarga un **PDF** (`pedido_carton_pintado.pdf`) con la lista de
-   cartas, cantidades, precios y el total.
+3. Descuenta del **stock** de cada carta la cantidad pedida (en una transaccion:
+   si no hay stock suficiente, el pedido no se registra).
+4. Genera y descarga un **PDF** (`pedido_carton_pintado.pdf`) con la lista de
+   cartas (con su foto), cantidades, precios y el total.
 
 Tambien hay un boton **Descargar PDF** para bajar el detalle del carrito sin
 guardarlo como pedido.
@@ -72,7 +74,7 @@ Nota: si no tenes la clave de Firebase (`serviceAccountKey.json`), el servidor f
 ## Git y seguridad
 
 - `serviceAccountKey.json` esta en `.gitignore` (nunca se sube).
-- `firestore.rules` permite leer a todos, escribir productos solo a admins y crear/ver pedidos a clientes registrados.
+- `firestore.rules` permite leer a todos, escribir productos solo a admins, crear/ver pedidos a clientes registrados, y a los clientes descontar stock (solo el campo `stock` y solo hacia abajo) cuando pagan un pedido.
 
 ## Scripts (opcionales)
 
