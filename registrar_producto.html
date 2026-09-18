@@ -58,16 +58,72 @@
         <p id="avisoScryfall" class="aviso-scryfall">Imagen automatica de Scryfall: se descargara al guardar. Si subis tu propia imagen, esa se usa.</p>
         <img id="vistaPrevia" class="vista-previa" alt="Vista previa">
         <input type="hidden" id="imagenUrl" value="">
+        <input type="hidden" id="setCodigoGuardar" value="">
+        <input type="hidden" id="collectorNumeroGuardar" value="">
         <button type="submit" id="btnGuardar" class="btn btn-registrar">Guardar Producto</button>
     </form>
 
     <p id="mensaje" class="mensaje"></p>
 
+    <div class="cargar-lista">
+        <h2>Cargar lista (CSV de Manabox o Moxfield)</h2>
+        <p>Carga el CSV de tu coleccion o deck una vez para agregar varias cartas por cantidad y arte. Despues ajustas el precio y stock de cada fila y guardas todo junto.</p>
+
+        <label class="campo">
+            <span>Archivo CSV</span>
+            <input type="file" id="archivoLista" accept=".csv,.txt">
+        </label>
+        <label class="campo">
+            <span>O pega el contenido del CSV</span>
+            <textarea id="textoLista" rows="4" placeholder="Name,Set code,Set name,Collector number,Foil,Quantity&#10;Sol Ring,CMD,Commander 2011,281,,4"></textarea>
+        </label>
+        <button type="button" id="btnAnalizarLista" class="btn btn-registrar">Analizar lista</button>
+
+        <div id="progresoLista" class="progreso" hidden>
+            <div class="progreso-barra"><div id="barraProgreso" class="progreso-lleno"></div></div>
+            <span id="textoProgreso" class="progreso-texto"></span>
+        </div>
+        <p id="mensajeLista" class="mensaje"></p>
+
+        <div id="zonaRevision" hidden>
+            <div class="precio-todos">
+                <label class="campo">
+                    <span>Precio para todas las filas</span>
+                    <input type="number" id="precioTodos" step="0.01" min="0" placeholder="Ej: 25000">
+                </label>
+                <button type="button" id="btnPrecioTodos" class="btn-secundario">Aplicar a todas</button>
+            </div>
+            <p id="resumenLista" class="lista-resumen"></p>
+            <div class="tabla-revision-wrap">
+                <table class="tabla-revision">
+                    <thead>
+                        <tr>
+                            <th>Arte</th>
+                            <th>Carta</th>
+                            <th>Set</th>
+                            <th>Nº</th>
+                            <th></th>
+                            <th>Stock</th>
+                            <th>Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpoRevision"></tbody>
+                </table>
+            </div>
+            <button type="button" id="btnGuardarLista" class="btn btn-registrar">Guardar lista</button>
+            <div id="progresoGuardado" class="progreso" hidden>
+                <div class="progreso-barra"><div id="barraGuardado" class="progreso-lleno"></div></div>
+                <span id="textoGuardado" class="progreso-texto"></span>
+            </div>
+        </div>
+    </div>
+
     <a href="index.html" class="btn btn-volver">Volver al inicio</a>
 </div>
 
 <script type="module">
-    import { productosRef, addDoc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
+    import { db, productosRef, addDoc, updateDoc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
+    import { increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     obtenerEsAdmin().then(function (admin) {
         if (!admin) {
@@ -279,6 +335,8 @@
 
         document.getElementById('nombre').value = cara.name || carta.name;
         document.getElementById('descripcion').value = construirDescripcion(carta);
+        document.getElementById('setCodigoGuardar').value = carta.set || '';
+        document.getElementById('collectorNumeroGuardar').value = carta.collector_number || '';
 
         const imagenUrl = obtenerImagenCarta(carta, 'normal');
         inputImagenUrl.value = imagenUrl;
@@ -303,6 +361,504 @@
         resultadosBusqueda.innerHTML = '';
         estadoBusqueda.textContent = 'Carta seleccionada: ' + (cara.name || carta.name) + '. Completa precio y stock.';
     }
+
+    // ── Importacion por lista (CSV de Manabox / Moxfield) ──
+    const inputArchivoLista = document.getElementById('archivoLista');
+    const inputTextoLista = document.getElementById('textoLista');
+    const btnAnalizarLista = document.getElementById('btnAnalizarLista');
+    const progresoLista = document.getElementById('progresoLista');
+    const barraProgreso = document.getElementById('barraProgreso');
+    const textoProgreso = document.getElementById('textoProgreso');
+    const mensajeLista = document.getElementById('mensajeLista');
+    const zonaRevision = document.getElementById('zonaRevision');
+    const cuerpoRevision = document.getElementById('cuerpoRevision');
+    const resumenLista = document.getElementById('resumenLista');
+    const btnPrecioTodos = document.getElementById('btnPrecioTodos');
+    const btnGuardarLista = document.getElementById('btnGuardarLista');
+    const progresoGuardado = document.getElementById('progresoGuardado');
+    const barraGuardado = document.getElementById('barraGuardado');
+    const textoGuardado = document.getElementById('textoGuardado');
+
+    let filasRevision = [];
+
+    function dividirLineaCSV(linea) {
+        const partes = [];
+        let actual = '';
+        let entreComillas = false;
+        for (let i = 0; i < linea.length; i++) {
+            const c = linea[i];
+            if (c === '"') {
+                if (entreComillas && linea[i + 1] === '"') {
+                    actual += '"';
+                    i++;
+                } else {
+                    entreComillas = !entreComillas;
+                }
+            } else if (c === ',' && !entreComillas) {
+                partes.push(actual.trim());
+                actual = '';
+            } else {
+                actual += c;
+            }
+        }
+        partes.push(actual.trim());
+        return partes;
+    }
+
+    function buscarColumna(cabecera, nombres) {
+        for (let i = 0; i < cabecera.length; i++) {
+            const h = cabecera[i].toLowerCase();
+            for (let n = 0; n < nombres.length; n++) {
+                if (h === nombres[n]) return i;
+            }
+        }
+        return -1;
+    }
+
+    function analizarLista(texto) {
+        const lineas = texto.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l !== ''; });
+        if (lineas.length === 0) return null;
+
+        const cabecera = dividirLineaCSV(lineas[0]).map(function (h) { return h.toLowerCase(); });
+        const iNombre = buscarColumna(cabecera, ['name', 'card name', 'nombre']);
+        if (iNombre === -1) return null;
+
+        const iCantidad = buscarColumna(cabecera, ['count', 'quantity', 'qty', 'total count']);
+        const iSetCodigo = buscarColumna(cabecera, ['set code', 'setcode']);
+        const iSetNombre = buscarColumna(cabecera, ['set name', 'edition', 'set', 'edicion']);
+        const iNumero = buscarColumna(cabecera, ['collector number', 'card number', 'collector', 'number', 'num']);
+        const iFoil = buscarColumna(cabecera, ['foil']);
+        const iScryfall = buscarColumna(cabecera, ['scryfall id', 'scryfallid', 'id']);
+
+        const filas = [];
+        for (let li = 1; li < lineas.length; li++) {
+            const campos = dividirLineaCSV(lineas[li]);
+            const nombre = iNombre < campos.length ? campos[iNombre] : '';
+            if (!nombre) continue;
+
+            let cantidad = 1;
+            if (iCantidad > -1 && iCantidad < campos.length) {
+                const crudo = campos[iCantidad];
+                cantidad = crudo === '' ? 0 : (Number(crudo.replace(/[^0-9.]/g, '')) || 0);
+            }
+            if (!Number.isInteger(cantidad) || cantidad <= 0) continue;
+
+            filas.push({
+                cantidad: cantidad,
+                nombre: nombre,
+                setCodigo: (iSetCodigo > -1 && iSetCodigo < campos.length) ? campos[iSetCodigo].trim() : '',
+                setNombre: (iSetNombre > -1 && iSetNombre < campos.length) ? campos[iSetNombre].trim() : '',
+                numero: (iNumero > -1 && iNumero < campos.length) ? campos[iNumero].trim() : '',
+                scryfallId: (iScryfall > -1 && iScryfall < campos.length) ? campos[iScryfall].trim() : '',
+                foil: false,
+                card: null,
+                sinResolver: false
+            });
+
+            if (iFoil > -1 && iFoil < campos.length) {
+                const v = campos[iFoil].trim().toLowerCase();
+                filas[filas.length - 1].foil = (v === 'foil' || v === 'yes' || v === 'true' || v === '1' || v === 'si');
+            }
+        }
+        return filas;
+    }
+
+    async function construirMapaSets() {
+        try {
+            const respuesta = await fetch('https://api.scryfall.com/sets');
+            const datos = await respuesta.json();
+            const mapa = {};
+            (datos.data || []).forEach(function (set) {
+                mapa[set.name.toLowerCase()] = set.code;
+                mapa[set.code.toLowerCase()] = set.code;
+            });
+            return mapa;
+        } catch (error) {
+            return {};
+        }
+    }
+
+    async function resolverCSV(filas) {
+        const hayNombres = filas.some(function (f) { return f.setNombre && !f.setCodigo; });
+        let mapaSets = null;
+        if (hayNombres) mapaSets = await construirMapaSets();
+
+        const identificadores = filas.map(function (fila) {
+            let set = fila.setCodigo;
+            if (!set && mapaSets) set = mapaSets[fila.setNombre.toLowerCase()] || '';
+            if (set && fila.numero) return { set: set.toLowerCase(), collector_number: fila.numero };
+            if (fila.scryfallId) return { id: fila.scryfallId };
+            return { name: fila.nombre };
+        });
+
+        const mapaPorId = {};
+        const mapaPorPrint = {};
+        const mapaPorNombre = {};
+
+        for (let i = 0; i < identificadores.length; i += 75) {
+            const lote = identificadores.slice(i, i + 75);
+            try {
+                const respuesta = await fetch('https://api.scryfall.com/cards/collection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifiers: lote })
+                });
+                const datos = await respuesta.json();
+                (datos.data || []).forEach(function (carta) {
+                    if (carta.id) mapaPorId[carta.id] = carta;
+                    if (carta.set && carta.collector_number) mapaPorPrint[carta.set.toLowerCase() + '|' + carta.collector_number] = carta;
+                    if (carta.name) mapaPorNombre[carta.name.toLowerCase()] = carta;
+                });
+            } catch (error) {
+                // Si un lote falla, esas cartas quedan sin resolver
+            }
+            actualizarProgreso('Resolviendo artes...', Math.min(100, Math.round(((i + lote.length) / identificadores.length) * 100)));
+            if (i + 75 < identificadores.length) await new Promise(function (res) { setTimeout(res, 250); });
+        }
+
+        filas.forEach(function (fila) {
+            let carta = null;
+            if (fila.scryfallId) carta = mapaPorId[fila.scryfallId] || null;
+            if (!carta && fila.setCodigo && fila.numero) {
+                carta = mapaPorPrint[fila.setCodigo.toLowerCase() + '|' + fila.numero] || null;
+            }
+            if (!carta) {
+                let set = fila.setCodigo;
+                if (!set && mapaSets) set = mapaSets[fila.setNombre.toLowerCase()] || '';
+                if (set && fila.numero) carta = mapaPorPrint[set.toLowerCase() + '|' + fila.numero] || null;
+                if (!carta) carta = mapaPorNombre[fila.nombre.toLowerCase()] || null;
+            }
+            fila.card = carta;
+            fila.sinResolver = !carta;
+        });
+        return filas;
+    }
+
+    async function prepararRevision(filas) {
+        const agrupadas = {};
+        filas.forEach(function (fila) {
+            const clave = fila.card ? fila.card.id : 'sin-resolver-no-' + fila.nombre.toLowerCase();
+            if (!agrupadas[clave]) {
+                agrupadas[clave] = {
+                    card: fila.card,
+                    nombre: fila.card ? fila.card.name : fila.nombre,
+                    cantidadTotal: 0,
+                    foil: false,
+                    sinResolver: fila.sinResolver
+                };
+            }
+            agrupadas[clave].cantidadTotal += fila.cantidad;
+            if (fila.foil) agrupadas[clave].foil = true;
+        });
+
+        let productos = [];
+        try {
+            const snap = await getDocs(productosRef);
+            productos = snap.docs.map(function (d) { return { id: d.id, datos: d.data() }; });
+        } catch (error) {
+            productos = [];
+        }
+
+        const filasGrupo = [];
+        Object.keys(agrupadas).forEach(function (clave) {
+            const g = agrupadas[clave];
+            let existente = null;
+            if (g.card && g.card.set && g.card.collector_number) {
+                existente = productos.find(function (p) {
+                    return p.datos.set_codigo === g.card.set && String(p.datos.collector_numero) === String(g.card.collector_number);
+                }) || null;
+            }
+            filasGrupo.push({
+                card: g.card,
+                nombre: g.nombre,
+                stock: g.cantidadTotal,
+                foil: g.foil,
+                sinResolver: g.sinResolver,
+                existente: existente,
+                precio: null
+            });
+        });
+        return filasGrupo;
+    }
+
+    function pintarRevision() {
+        cuerpoRevision.innerHTML = '';
+        let sinResolver = 0;
+        let existentes = 0;
+
+        filasRevision.forEach(function (fila, indice) {
+            const tr = document.createElement('tr');
+            tr.className = fila.sinResolver ? 'fila-sin-resolver' : '';
+
+            const urlImg = fila.card ? (obtenerImagenCarta(fila.card, 'thumb') || obtenerImagenCarta(fila.card, 'small')) : '';
+            const detalle = fila.card
+                ? ((fila.card.type_line || '') + (fila.card.rarity ? ' · ' + fila.card.rarity : ''))
+                : 'No se pudo resolver el arte. Esta fila se saltea al guardar.';
+            const referencia = (fila.card && fila.card.prices && fila.card.prices.usd) ? 'Ref USD ' + fila.card.prices.usd : 'Precio';
+
+            const celdaArte = document.createElement('td');
+            celdaArte.className = 'celda-arte';
+            if (urlImg) {
+                const img = document.createElement('img');
+                img.src = urlImg;
+                img.alt = fila.nombre;
+                celdaArte.appendChild(img);
+            } else {
+                const span = document.createElement('span');
+                span.className = 'sin-arte';
+                span.textContent = '?';
+                celdaArte.appendChild(span);
+            }
+            tr.appendChild(celdaArte);
+
+            const celdaInfo = document.createElement('td');
+            celdaInfo.innerHTML =
+                '<div class="lista-carta-nombre"></div>' +
+                '<div class="lista-carta-detalle"></div>' +
+                (fila.existente ? '<div class="lista-existente">Ya existe en la tienda: se sumara al stock.</div>' : '');
+            celdaInfo.querySelector('.lista-carta-nombre').textContent = fila.nombre;
+            const detalleDiv = celdaInfo.querySelector('.lista-carta-detalle');
+            detalleDiv.textContent = detalle;
+            if (fila.foil) {
+                const badge = document.createElement('span');
+                badge.className = 'badge-foil';
+                badge.textContent = 'foil';
+                detalleDiv.appendChild(badge);
+            }
+            tr.appendChild(celdaInfo);
+
+            tr.appendChild(document.createElement('td'));
+            const tdNombre = tr.lastChild;
+            tdNombre.textContent = fila.card ? fila.card.set_name : '-';
+            const tdNumero = document.createElement('td');
+            tdNumero.textContent = fila.card ? fila.card.collector_number : '-';
+            tr.appendChild(tdNumero);
+
+            const tdBadge = document.createElement('td');
+            if (fila.sinResolver) {
+                const badge = document.createElement('span');
+                badge.className = 'badge-foil';
+                badge.textContent = 'sin resolver';
+                tdBadge.appendChild(badge);
+            }
+            tr.appendChild(tdBadge);
+
+            const inputStock = document.createElement('input');
+            inputStock.type = 'number';
+            inputStock.className = 'input-stock';
+            inputStock.setAttribute('data-indice', String(indice));
+            inputStock.value = fila.stock;
+            inputStock.step = '1';
+            inputStock.min = '1';
+            if (fila.sinResolver) { inputStock.disabled = true; inputStock.value = ''; }
+            tr.appendChild(document.createElement('td'));
+            tr.lastChild.appendChild(inputStock);
+
+            const inputPrecio = document.createElement('input');
+            inputPrecio.type = 'number';
+            inputPrecio.className = 'input-precio';
+            inputPrecio.setAttribute('data-indice', String(indice));
+            inputPrecio.placeholder = fila.sinResolver ? '—' : referencia;
+            inputPrecio.step = '0.01';
+            inputPrecio.min = '0';
+            if (fila.sinResolver) inputPrecio.disabled = true;
+            tr.appendChild(document.createElement('td'));
+            tr.lastChild.appendChild(inputPrecio);
+
+            cuerpoRevision.appendChild(tr);
+
+            if (fila.sinResolver) sinResolver++;
+            if (fila.existente) existentes++;
+        });
+
+        const resolubles = filasRevision.length - sinResolver;
+        const nuevos = resolubles - existentes;
+        let resumen = filasRevision.length + ' carta(s)';
+        if (nuevos > 0) resumen += ' · ' + nuevos + ' nueva(s)';
+        if (existentes > 0) resumen += ' · ' + existentes + ' ya existen (se suma stock)';
+        if (sinResolver > 0) resumen += ' · ' + sinResolver + ' sin resolver (se saltan)';
+        resumenLista.textContent = resumen;
+    }
+
+    function actualizarProgreso(texto, porcentaje) {
+        textoProgreso.textContent = texto;
+        barraProgreso.style.width = porcentaje + '%';
+    }
+
+    function actualizarGuardado(actual, total, texto) {
+        barraGuardado.style.width = Math.round((actual / total) * 100) + '%';
+        textoGuardado.textContent = texto;
+    }
+
+    inputArchivoLista.addEventListener('change', function () {
+        if (this.files[0]) inputTextoLista.value = '';
+    });
+
+    inputTextoLista.addEventListener('input', function () {
+        if (this.value.trim()) inputArchivoLista.value = '';
+    });
+
+    async function iniciarAnalisis(texto) {
+        mensajeLista.textContent = '';
+        const filas = analizarLista(texto);
+        if (!filas) {
+            mensajeLista.textContent = 'No se reconocio un CSV valido. Tiene que tener columnas Name y Quantity/Count (export de Manabox o Moxfield).';
+            mensajeLista.style.color = '#dc2626';
+            return;
+        }
+        if (filas.length === 0) {
+            mensajeLista.textContent = 'El CSV no tiene filas con cantidad valida.';
+            mensajeLista.style.color = '#dc2626';
+            return;
+        }
+
+        zonaRevision.hidden = true;
+        progresoGuardado.hidden = true;
+        btnAnalizarLista.disabled = true;
+        progresoLista.hidden = false;
+        actualizarProgreso('Analizando...', 5);
+
+        try {
+            await resolverCSV(filas);
+            filasRevision = await prepararRevision(filas);
+            actualizarProgreso('Listo', 100);
+            progresoLista.hidden = true;
+            pintarRevision();
+            zonaRevision.hidden = false;
+        } catch (error) {
+            mensajeLista.textContent = 'Error al resolver las cartas: ' + error.message;
+            mensajeLista.style.color = '#dc2626';
+            progresoLista.hidden = true;
+        } finally {
+            btnAnalizarLista.disabled = false;
+        }
+    }
+
+    btnAnalizarLista.addEventListener('click', function () {
+        const texto = inputTextoLista.value.trim();
+        const archivo = inputArchivoLista.files[0];
+        if (archivo) {
+            const lector = new FileReader();
+            lector.onload = function (e) {
+                iniciarAnalisis(String(e.target.result || '').trim());
+            };
+            lector.onerror = function () {
+                mensajeLista.textContent = 'No se pudo leer el archivo.';
+                mensajeLista.style.color = '#dc2626';
+            };
+            lector.readAsText(archivo);
+        } else {
+            iniciarAnalisis(texto);
+        }
+    });
+
+    cuerpoRevision.addEventListener('input', function (e) {
+        const objetivo = e.target;
+        const indice = objetivo.getAttribute('data-indice');
+        if (indice === null || indice === '') return;
+        const fila = filasRevision[Number(indice)];
+        if (!fila) return;
+        if (objetivo.classList.contains('input-stock')) {
+            fila.stock = objetivo.value === '' ? null : Number(objetivo.value);
+        } else if (objetivo.classList.contains('input-precio')) {
+            fila.precio = objetivo.value === '' ? null : Number(objetivo.value);
+        }
+    });
+
+    btnPrecioTodos.addEventListener('click', function () {
+        const valor = document.getElementById('precioTodos').value;
+        if (valor === '') return;
+        const numero = Number(valor);
+        if (!Number.isFinite(numero) || numero < 0) return;
+        filasRevision.forEach(function (fila) {
+            if (!fila.sinResolver) fila.precio = numero;
+        });
+        cuerpoRevision.querySelectorAll('.input-precio').forEach(function (input) {
+            input.value = numero;
+        });
+    });
+
+    btnGuardarLista.addEventListener('click', async function () {
+        let sinCompletar = 0;
+        filasRevision.forEach(function (fila) {
+            if (fila.sinResolver) return;
+            if (fila.precio === null || !Number.isFinite(fila.precio) || fila.precio < 0) sinCompletar++;
+            if (!Number.isInteger(fila.stock) || fila.stock < 1) sinCompletar++;
+        });
+        if (sinCompletar > 0) {
+            mensajeLista.textContent = sinCompletar + ' fila(s) sin precio y stock validos. Usa "Aplicar a todas" o completa cada fila.';
+            mensajeLista.style.color = '#dc2626';
+            return;
+        }
+
+        btnGuardarLista.disabled = true;
+        progresoGuardado.hidden = false;
+        mensajeLista.textContent = '';
+
+        const total = filasRevision.length;
+        let guardadas = 0;
+        let sumadas = 0;
+        let saltadas = 0;
+
+        try {
+            for (let i = 0; i < total; i++) {
+                const fila = filasRevision[i];
+                actualizarGuardado(i, total, 'Guardando ' + Math.max(i, 1) + ' de ' + total + '...');
+
+                if (fila.sinResolver) {
+                    saltadas++;
+                    continue;
+                }
+
+                let descripcion = construirDescripcion(fila.card);
+                if (fila.foil) descripcion = descripcion + '\nFoil';
+
+                if (fila.existente) {
+                    await updateDoc(doc(db, 'productos', fila.existente.id), {
+                        stock: increment(fila.stock)
+                    });
+                    sumadas++;
+                } else {
+                    let imagen = '';
+                    const urlImagen = obtenerImagenCarta(fila.card, 'normal');
+                    if (urlImagen) {
+                        try {
+                            imagen = await comprimirImagenDesdeUrl(urlImagen, 800, 0.7);
+                        } catch (error) {
+                            imagen = '';
+                        }
+                    }
+                    await addDoc(productosRef, {
+                        nombre: fila.card.name,
+                        descripcion: descripcion,
+                        precio: fila.precio,
+                        stock: fila.stock,
+                        imagen: imagen,
+                        set_codigo: fila.card.set || '',
+                        collector_numero: fila.card.collector_number || '',
+                        createdAt: serverTimestamp()
+                    });
+                    guardadas++;
+                }
+            }
+
+            actualizarGuardado(total, total, 'Terminado');
+            mensajeLista.textContent = 'Lista guardada: ' + guardadas + ' nueva(s), ' + sumadas + ' con stock sumado' + (saltadas > 0 ? ', ' + saltadas + ' salteada(s)' : '') + '.';
+            mensajeLista.style.color = '#16a34a';
+            filasRevision = [];
+            pintarRevision();
+            zonaRevision.hidden = true;
+            document.getElementById('precioTodos').value = '';
+            inputTextoLista.value = '';
+            inputArchivoLista.value = '';
+        } catch (error) {
+            mensajeLista.textContent = 'Error al guardar la lista: ' + error.message;
+            mensajeLista.style.color = '#dc2626';
+        } finally {
+            btnGuardarLista.disabled = false;
+            progresoGuardado.hidden = true;
+        }
+    });
 
     document.getElementById('formProducto').addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -352,6 +908,8 @@
                 precio: precio,
                 stock: stock,
                 imagen: imagen,
+                set_codigo: document.getElementById('setCodigoGuardar').value,
+                collector_numero: document.getElementById('collectorNumeroGuardar').value,
                 createdAt: serverTimestamp()
             });
 
@@ -361,6 +919,8 @@
             avisoScryfall.style.display = 'none';
             precioReferencia.style.display = 'none';
             inputImagenUrl.value = '';
+            document.getElementById('setCodigoGuardar').value = '';
+            document.getElementById('collectorNumeroGuardar').value = '';
             inputBusqueda.value = '';
             resultadosBusqueda.innerHTML = '';
             estadoBusqueda.textContent = '';

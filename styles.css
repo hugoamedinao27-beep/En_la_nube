@@ -1303,3 +1303,189 @@ body.pagina-productos {
 .pagina-productos .productos {
     margin-top: 14px;
 }
+
+/* Importacion por lista (CSV de Manabox / Moxfield) */
+.cargar-lista {
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px dashed #c3b28e;
+}
+
+.cargar-lista h2 {
+    color: #1e3a5f;
+    font-size: 20px;
+    margin: 0 0 6px;
+}
+
+.cargar-lista > p {
+    color: #555555;
+    font-size: 13px;
+    margin: 0 0 14px;
+}
+
+.progreso {
+    margin: 12px 0;
+}
+
+.progreso-barra {
+    height: 8px;
+    background: #e8e2d0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progreso-lleno {
+    height: 100%;
+    width: 0;
+    background: #1e3a5f;
+    border-radius: 6px;
+    transition: width 0.2s;
+}
+
+.progreso-texto {
+    display: block;
+    font-size: 12px;
+    color: #666666;
+    margin-top: 4px;
+}
+
+.lista-resumen {
+    font-size: 13px;
+    color: #1e3a5f;
+    font-weight: 600;
+    margin: 8px 0;
+}
+
+.precio-todos {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: #f7f4ea;
+    border: 1px solid #e8e2d0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+}
+
+.precio-todos .campo {
+    flex: 1;
+    min-width: 180px;
+    margin-bottom: 0;
+}
+
+.btn-secundario {
+    background: #f8e9ad;
+    color: #1e3a5f;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 38px;
+    white-space: nowrap;
+}
+
+.btn-secundario:hover {
+    background: #f1db85;
+}
+
+.tabla-revision-wrap {
+    overflow-x: auto;
+    margin-bottom: 14px;
+}
+
+.tabla-revision {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: #ffffff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.tabla-revision th {
+    background: #1e3a5f;
+    color: #f8e9ad;
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.tabla-revision td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #efe9db;
+    vertical-align: middle;
+}
+
+.tabla-revision tr.fila-sin-resolver td {
+    background: #fdf2f2;
+}
+
+.celda-arte img {
+    width: 42px;
+    height: 59px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: #f0f0f0;
+    display: block;
+}
+
+.sin-arte {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 59px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    color: #999999;
+    font-size: 16px;
+}
+
+.lista-carta-nombre {
+    font-weight: 700;
+    color: #1e3a5f;
+}
+
+.lista-carta-detalle {
+    font-size: 11px;
+    color: #777777;
+    margin-top: 2px;
+}
+
+.badge-foil {
+    display: inline-block;
+    background: #d9ae8f;
+    color: #3b2f26;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 4px;
+}
+
+.lista-existente {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #8a6d12;
+}
+
+.tabla-revision input[type="number"] {
+    width: 96px;
+    padding: 5px 8px;
+    border: 1px solid #d4cbb4;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fffef7;
+}
+
+.tabla-revision input[type="number"]:focus {
+    outline: none;
+    border-color: #1e3a5f;
+    box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.15);
+}
