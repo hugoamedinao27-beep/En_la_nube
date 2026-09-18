@@ -13,6 +13,17 @@
     <h2>Formulario de registro</h2>
     <p>Aqui podras registrar un nuevo producto en el sistema.</p>
 
+    <div class="buscador-cartas">
+        <label class="campo">
+            <span>Buscar carta por nombre (Scryfall)</span>
+            <input type="search" id="busquedaCarta" placeholder="Ej: Sol Ring, Lightning Bolt..." autocomplete="off">
+        </label>
+        <p id="estadoBusqueda" class="buscador-estado"></p>
+        <div id="resultadosBusqueda" class="resultados-cartas"></div>
+    </div>
+
+    <p id="precioReferencia" class="precio-referencia"></p>
+
     <form id="formProducto" class="form">
         <label class="campo">
             <span>Nombre</span>
@@ -34,7 +45,9 @@
             <span>Imagen de la carta</span>
             <input type="file" id="imagen" name="imagen" accept="image/*">
         </label>
+        <p id="avisoScryfall" class="aviso-scryfall">Imagen automatica de Scryfall: se descargara al guardar. Si subis tu propia imagen, esa se usa.</p>
         <img id="vistaPrevia" class="vista-previa" alt="Vista previa">
+        <input type="hidden" id="imagenUrl" value="">
         <button type="submit" id="btnGuardar" class="btn btn-registrar">Guardar Producto</button>
     </form>
 
@@ -54,10 +67,18 @@
 
     const inputImagen = document.getElementById('imagen');
     const vistaPrevia = document.getElementById('vistaPrevia');
+    const inputImagenUrl = document.getElementById('imagenUrl');
+    const avisoScryfall = document.getElementById('avisoScryfall');
+    const inputBusqueda = document.getElementById('busquedaCarta');
+    const estadoBusqueda = document.getElementById('estadoBusqueda');
+    const resultadosBusqueda = document.getElementById('resultadosBusqueda');
+    const precioReferencia = document.getElementById('precioReferencia');
 
     inputImagen.addEventListener('change', function () {
         const archivo = this.files[0];
         if (!archivo) return;
+        inputImagenUrl.value = '';
+        avisoScryfall.style.display = 'none';
 
         const lector = new FileReader();
         lector.onload = function (e) {
@@ -67,24 +88,27 @@
         lector.readAsDataURL(archivo);
     });
 
+    function generarDataURL(img, maxAncho, calidad) {
+        let ancho = img.naturalWidth || img.width;
+        let alto = img.naturalHeight || img.height;
+        if (ancho > maxAncho) {
+            alto = Math.round(alto * maxAncho / ancho);
+            ancho = maxAncho;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = ancho;
+        canvas.height = alto;
+        canvas.getContext('2d').drawImage(img, 0, 0, ancho, alto);
+        return canvas.toDataURL('image/jpeg', calidad);
+    }
+
     function comprimirImagen(archivo, maxAncho, calidad) {
         return new Promise(function (resolver, rechazar) {
             const lector = new FileReader();
             lector.onload = function (e) {
                 const img = new Image();
                 img.onload = function () {
-                    let ancho = img.width;
-                    let alto = img.height;
-                    if (ancho > maxAncho) {
-                        alto = Math.round(alto * maxAncho / ancho);
-                        ancho = maxAncho;
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = ancho;
-                    canvas.height = alto;
-                    const contexto = canvas.getContext('2d');
-                    contexto.drawImage(img, 0, 0, ancho, alto);
-                    resolver(canvas.toDataURL('image/jpeg', calidad));
+                    resolver(generarDataURL(img, maxAncho, calidad));
                 };
                 img.onerror = rechazar;
                 img.src = e.target.result;
@@ -92,6 +116,169 @@
             lector.onerror = rechazar;
             lector.readAsDataURL(archivo);
         });
+    }
+
+    function comprimirImagenDesdeUrl(url, maxAncho, calidad) {
+        return new Promise(function (resolver, rechazar) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function () {
+                resolver(generarDataURL(img, maxAncho, calidad));
+            };
+            img.onerror = rechazar;
+            img.src = url;
+        });
+    }
+
+    // ── Buscador de cartas (Scryfall) ──
+    let temporizadorBusqueda = null;
+
+    inputBusqueda.addEventListener('input', function () {
+        clearTimeout(temporizadorBusqueda);
+        const termino = this.value.trim();
+        if (termino.length < 2) {
+            resultadosBusqueda.innerHTML = '';
+            estadoBusqueda.textContent = '';
+            return;
+        }
+        temporizadorBusqueda = setTimeout(function () {
+            buscarCartas(termino);
+        }, 600);
+    });
+
+    function obtenerImagenCarta(carta, tamanio) {
+        if (carta.image_uris && carta.image_uris[tamanio]) return carta.image_uris[tamanio];
+        if (carta.card_faces && carta.card_faces[0] && carta.card_faces[0].image_uris) {
+            return carta.card_faces[0].image_uris[tamanio] || '';
+        }
+        return '';
+    }
+
+    function construirDescripcion(carta) {
+        const partes = [];
+        if (carta.card_faces && carta.card_faces.length > 0) {
+            carta.card_faces.forEach(function (cara) {
+                partes.push(cara.name);
+                if (cara.mana_cost) partes.push(cara.mana_cost);
+                if (cara.type_line) partes.push(cara.type_line);
+                if (cara.oracle_text) partes.push(cara.oracle_text);
+            });
+        } else {
+            if (carta.mana_cost) partes.push(carta.mana_cost);
+            if (carta.type_line) partes.push(carta.type_line);
+            if (carta.oracle_text) partes.push(carta.oracle_text);
+        }
+        return partes.join('\n');
+    }
+
+    function buscarCartas(termino) {
+        estadoBusqueda.textContent = 'Buscando...';
+        resultadosBusqueda.innerHTML = '';
+
+        fetch('https://api.scryfall.com/cards/search?q=' + encodeURIComponent(termino) + '&order=name&unique=cards')
+            .then(function (respuesta) {
+                if (!respuesta.ok) {
+                    return respuesta.json().then(function (datos) {
+                        throw new Error(datos.not_found ? 'sin-resultados' : 'error');
+                    });
+                }
+                return respuesta.json();
+            })
+            .then(function (datos) {
+                const lista = datos.data || [];
+                const primera = lista[0];
+                if (primera && termino.toLowerCase() === primera.name.split(' // ')[0].toLowerCase()) {
+                    seleccionarCarta(primera);
+                    estadoBusqueda.textContent = '';
+                } else {
+                    mostrarResultados(lista);
+                    estadoBusqueda.textContent = lista.length > 0 ? lista.length + ' resultado(s)' : 'No se encontraron cartas.';
+                }
+            })
+            .catch(function (error) {
+                estadoBusqueda.textContent = (error.message === 'sin-resultados')
+                    ? 'No se encontraron cartas.'
+                    : 'No se pudo conectar con Scryfall. Podes cargar la carta manualmente.';
+                resultadosBusqueda.innerHTML = '';
+            });
+    }
+
+    function mostrarResultados(lista) {
+        resultadosBusqueda.innerHTML = '';
+        lista.slice(0, 10).forEach(function (carta) {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'resultado-carta';
+
+            const imagen = document.createElement('img');
+            imagen.className = 'resultado-carta-img';
+            const urlMini = obtenerImagenCarta(carta, 'thumb') || obtenerImagenCarta(carta, 'small');
+            if (urlMini) {
+                imagen.src = urlMini;
+                imagen.alt = carta.name;
+            }
+            item.appendChild(imagen);
+
+            const info = document.createElement('div');
+            info.className = 'resultado-carta-info';
+
+            const nombre = document.createElement('div');
+            nombre.className = 'resultado-carta-nombre';
+            nombre.textContent = carta.name;
+
+            const detalles = document.createElement('div');
+            detalles.className = 'resultado-carta-detalles';
+            detalles.textContent = (carta.type_line || '') + (carta.rarity ? ' · ' + carta.rarity : '');
+
+            info.appendChild(nombre);
+            info.appendChild(detalles);
+
+            const usd = carta.prices && carta.prices.usd;
+            if (usd) {
+                const precio = document.createElement('div');
+                precio.className = 'resultado-carta-precio';
+                precio.textContent = 'Ref USD: $' + usd;
+                info.appendChild(precio);
+            }
+
+            item.appendChild(info);
+
+            item.addEventListener('click', function () {
+                seleccionarCarta(carta);
+            });
+
+            resultadosBusqueda.appendChild(item);
+        });
+    }
+
+    function seleccionarCarta(carta) {
+        const cara = (carta.card_faces && carta.card_faces[0]) || carta;
+
+        document.getElementById('nombre').value = cara.name || carta.name;
+        document.getElementById('descripcion').value = construirDescripcion(carta);
+
+        const imagenUrl = obtenerImagenCarta(carta, 'normal');
+        inputImagenUrl.value = imagenUrl;
+
+        if (imagenUrl) {
+            vistaPrevia.src = imagenUrl;
+            vistaPrevia.style.display = 'block';
+            avisoScryfall.style.display = 'block';
+        } else {
+            vistaPrevia.style.display = 'none';
+            avisoScryfall.style.display = 'none';
+        }
+
+        const usd = carta.prices && carta.prices.usd;
+        if (usd) {
+            precioReferencia.textContent = 'Referencia Scryfall: aprox. $' + usd + ' USD. Pone tu precio de venta en ARS.';
+            precioReferencia.style.display = 'block';
+        } else {
+            precioReferencia.style.display = 'none';
+        }
+
+        resultadosBusqueda.innerHTML = '';
+        estadoBusqueda.textContent = 'Carta seleccionada: ' + (cara.name || carta.name) + '. Completa precio y stock.';
     }
 
     document.getElementById('formProducto').addEventListener('submit', async function (e) {
@@ -128,6 +315,12 @@
             let imagen = '';
             if (archivoImagen) {
                 imagen = await comprimirImagen(archivoImagen, 800, 0.7);
+            } else if (inputImagenUrl.value) {
+                try {
+                    imagen = await comprimirImagenDesdeUrl(inputImagenUrl.value, 800, 0.7);
+                } catch (error) {
+                    imagen = '';
+                }
             }
 
             await addDoc(productosRef, {
@@ -142,6 +335,12 @@
             mensaje.textContent = 'Producto guardado correctamente.';
             mensaje.style.color = '#16a34a';
             vistaPrevia.style.display = 'none';
+            avisoScryfall.style.display = 'none';
+            precioReferencia.style.display = 'none';
+            inputImagenUrl.value = '';
+            inputBusqueda.value = '';
+            resultadosBusqueda.innerHTML = '';
+            estadoBusqueda.textContent = '';
             e.target.reset();
         } catch (error) {
             mensaje.textContent = 'Error al guardar: ' + error.message;

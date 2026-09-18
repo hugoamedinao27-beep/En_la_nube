@@ -1155,6 +1155,112 @@ body.inicio {
     margin-bottom: 6px;
 }
 
+/* ── Buscador de cartas (Scryfall) ── */
+.buscador-cartas {
+    background: #f7f8fc;
+    border: 1px solid #e3e6ef;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 18px;
+}
+
+.buscador-estado {
+    font-size: 13px;
+    color: #666666;
+    margin: 6px 0 0;
+}
+
+.resultados-cartas {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.resultado-carta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    background: #ffffff;
+    border: 1px solid #e3e6ef;
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    color: inherit;
+    box-shadow: 0 1px 2px rgba(16, 34, 77, 0.05);
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.resultado-carta:hover {
+    border-color: #caa64c;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(16, 34, 77, 0.1);
+}
+
+.resultado-carta-img {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 34px;
+    object-fit: contain;
+    border-radius: 3px;
+    border: 1px solid #b89a3e;
+    background: linear-gradient(135deg, #f0d98b, #caa64c);
+}
+
+.resultado-carta-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.resultado-carta-nombre {
+    font-weight: 700;
+    font-size: 14px;
+    color: #111111;
+}
+
+.resultado-carta-detalles {
+    font-size: 12px;
+    color: #666666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.resultado-carta-precio {
+    font-size: 12px;
+    font-weight: 600;
+    color: #92400e;
+    margin-top: 2px;
+}
+
+.precio-referencia {
+    display: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 0 0 16px;
+}
+
+.aviso-scryfall {
+    display: none;
+    font-size: 12px;
+    color: #1d4ed8;
+    background: #dbeafe;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin: 8px 0 0;
+}
+
 /* ── Pagina de pedidos ── */
 body.pagina-pedidos {
     display: block;
