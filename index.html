@@ -110,40 +110,37 @@
         carta.href = 'detalle_producto.html?id=' + encodeURIComponent(p.id);
         carta.title = 'Ver detalles de ' + p.nombre;
 
-        const tipo = document.createElement('div');
-        tipo.className = 'carta-tipo';
-        tipo.textContent = 'Cartas de MTG';
-
-        const nombre = document.createElement('div');
-        nombre.className = 'carta-nombre';
-        nombre.textContent = p.nombre;
-
-        const imagen = document.createElement('div');
-        imagen.className = 'carta-imagen';
+        const marco = document.createElement('div');
+        marco.className = 'carta-marco';
         if (p.imagen) {
             const img = document.createElement('img');
             img.src = p.imagen;
             img.alt = p.nombre;
             img.loading = 'lazy';
-            imagen.appendChild(img);
+            marco.appendChild(img);
         } else {
-            imagen.textContent = 'MTG';
+            const placeholder = document.createElement('span');
+            placeholder.textContent = 'MTG';
+            marco.appendChild(placeholder);
         }
 
-        const descripcion = document.createElement('div');
-        descripcion.className = 'carta-descripcion';
-        descripcion.textContent = p.descripcion;
+        const info = document.createElement('div');
+        info.className = 'carta-info';
+
+        const nombre = document.createElement('div');
+        nombre.className = 'carta-nombre';
+        nombre.textContent = p.nombre;
 
         const precio = document.createElement('div');
         precio.className = 'carta-precio';
         precio.textContent = formatearPrecio(p.precio);
 
-        carta.appendChild(tipo);
-        carta.appendChild(nombre);
-        carta.appendChild(imagen);
-        carta.appendChild(descripcion);
-        carta.appendChild(badgeStock(p));
-        carta.appendChild(precio);
+        info.appendChild(nombre);
+        info.appendChild(badgeStock(p));
+        info.appendChild(precio);
+
+        carta.appendChild(marco);
+        carta.appendChild(info);
 
         return carta;
     }
