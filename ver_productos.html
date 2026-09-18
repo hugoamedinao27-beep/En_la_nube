@@ -603,37 +603,58 @@
             let items = [];
 
             await runTransaction(db, async function (tx) {
-                items = [];
-
+                // 1) Todas las lecturas primero.
+                const lecturas = [];
                 for (const item of carrito) {
-                    const prodRef = doc(productosRef, item.id);
-                    const prodSnap = await tx.get(prodRef);
+                    lecturas.push({
+                        item: item,
+                        ref: doc(productosRef, item.id),
+                        snap: await tx.get(doc(productosRef, item.id))
+                    });
+                }
+
+                // 2) Validar stock con los datos ya leidos.
+                items = [];
+                for (const lectura of lecturas) {
+                    const prodRef = lectura.ref;
+                    const prodSnap = lectura.snap;
 
                     if (!prodSnap.exists()) {
-                        throw new Error('La carta "' + item.nombre + '" ya no está disponible.');
+                        throw new Error('La carta "' + lectura.item.nombre + '" ya no está disponible.');
                     }
 
                     const stock = Number(prodSnap.data().stock) || 0;
-                    const cantidad = Number(item.cantidad);
+                    const cantidad = Number(lectura.item.cantidad);
 
                     if (stock < cantidad) {
-                        throw new Error('Stock insuficiente de "' + item.nombre + '". Quedan ' + stock + ' disponibles.');
+                        throw new Error('Stock insuficiente de "' + lectura.item.nombre + '". Quedan ' + stock + ' disponibles.');
                     }
 
-                    await tx.update(prodRef, { stock: stock - cantidad });
-
                     items.push({
-                        productoId: item.id,
-                        productoNombre: item.nombre,
-                        productoPrecio: Number(item.precio),
+                        productoId: lectura.item.id,
+                        productoNombre: lectura.item.nombre,
+                        productoPrecio: Number(lectura.item.precio),
+                        stockActual: stock,
                         cantidad: cantidad
                     });
+                }
+
+                // 3) Descontar el stock y crear el pedido (todas las escrituras juntas).
+                for (const lectura of lecturas) {
+                    await tx.update(lectura.ref, { stock: Number(lectura.snap.data().stock) - Number(lectura.item.cantidad) });
                 }
 
                 const total = items.reduce(function (t, i) { return t + Number(i.productoPrecio) * Number(i.cantidad); }, 0);
 
                 await tx.set(pedidoRef, {
-                    items: items,
+                    items: items.map(function (i) {
+                        return {
+                            productoId: i.productoId,
+                            productoNombre: i.productoNombre,
+                            productoPrecio: i.productoPrecio,
+                            cantidad: i.cantidad
+                        };
+                    }),
                     total: total,
                     usuarioId: user.uid,
                     usuarioEmail: user.email,
