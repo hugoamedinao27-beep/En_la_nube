@@ -6,32 +6,51 @@
     <title>Cartón Pintado - Tienda TCG</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="inicio">
 
-<div class="card">
-    <img src="Imagenes/bluecardlogofinal-colorcorregido8131.png" alt="Logo Cartón Pintado" class="logo-principal">
-    <h1>Cartón Pintado</h1>
-    <h2>Venta de naipes de MTG y distintos TCG</h2>
-    <p>
-        Tienda dedicada a la venta de cartas de Magic: The Gathering y otros juegos de cartas coleccionables.
-    </p>
-    <div class="botones" id="botonesInvitado">
-        <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
-        <a href="login.html" class="btn btn-login">Iniciar Sesión</a>
-        <a href="registro.html" class="btn btn-registrar">Crear cuenta</a>
+<header class="hero">
+    <div class="hero-contenido">
+        <img src="Imagenes/bluecardlogofinal-colorcorregido8131.png" alt="Logo Cartón Pintado" class="logo-principal">
+        <h1>Cartón Pintado</h1>
+        <h2 class="slogan">Venta de naipes de MTG y distintos TCG</h2>
+        <p class="hero-descripcion">
+            Tienda dedicada a la venta de cartas de Magic: The Gathering y otros juegos de cartas coleccionables.
+        </p>
+        <div class="botones botones-hero" id="botonesInvitado">
+            <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
+            <a href="login.html" class="btn btn-login">Iniciar Sesión</a>
+            <a href="registro.html" class="btn btn-registrar">Crear cuenta</a>
+        </div>
+        <div class="botones botones-hero" id="botonesRegistrado" style="display: none;">
+            <p id="usuarioSesion" class="usuario-sesion"></p>
+            <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
+            <a href="registrar_producto.html" class="btn btn-registrar" id="linkRegistrarProducto" style="display: none;">Registrar Producto</a>
+            <a href="ver_pedidos.html" class="btn btn-login" id="linkVerPedidos" style="display: none;">Ver Pedidos</a>
+            <a href="pedidos_pendientes.html" class="btn btn-registrar" id="linkPedidosPendientes" style="display: none;">Pedidos Pendientes</a>
+            <button type="button" id="btnCerrarSesion" class="btn btn-login">Cerrar Sesión</button>
+        </div>
     </div>
-    <div class="botones" id="botonesRegistrado" style="display: none;">
-        <p id="usuarioSesion" class="usuario-sesion"></p>
-        <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
-        <a href="registrar_producto.html" class="btn btn-registrar" id="linkRegistrarProducto" style="display: none;">Registrar Producto</a>
-        <a href="ver_pedidos.html" class="btn btn-login" id="linkVerPedidos" style="display: none;">Ver Pedidos</a>
-        <a href="pedidos_pendientes.html" class="btn btn-registrar" id="linkPedidosPendientes" style="display: none;">Pedidos Pendientes</a>
-        <button type="button" id="btnCerrarSesion" class="btn btn-login">Cerrar Sesión</button>
-    </div>
-</div>
+</header>
+
+<main class="contenido-inicio">
+    <section class="seccion">
+        <h2 class="titulo-seccion">Cartas agregadas recientemente</h2>
+        <p class="subtitulo-seccion">Las últimas cartas que sumamos al catálogo.</p>
+        <div id="recientes" class="productos recientes"></div>
+        <p id="recientesVacio" class="mensaje">No hay cartas cargadas todavía.</p>
+        <p id="recientesError" class="mensaje" style="display:none;">No se pudo conectar con Firebase.</p>
+        <div class="acciones-seccion">
+            <a href="ver_productos.html" class="btn btn-ver">Ver todos los productos</a>
+        </div>
+    </section>
+</main>
+
+<footer class="pie">
+    <p>Cartón Pintado · Venta de cartas MTG y TCG</p>
+</footer>
 
 <script type="module">
-    import { auth, onAuthStateChanged, signOut, obtenerEsAdmin } from './firebaseConfig.js';
+    import { auth, onAuthStateChanged, signOut, obtenerEsAdmin, productosRef, getDocs, query, orderBy } from './firebaseConfig.js';
 
     const botonesInvitado = document.getElementById('botonesInvitado');
     const botonesRegistrado = document.getElementById('botonesRegistrado');
@@ -64,6 +83,101 @@
             alert('Error al cerrar sesión.');
         });
     });
+
+    // ── Cartas recientes ──
+    function formatearPrecio(precio) {
+        const numero = Number(precio);
+        if (!Number.isFinite(numero)) return '$' + precio;
+        return numero.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    function badgeStock(producto) {
+        const badge = document.createElement('div');
+        const stock = Number(producto.stock);
+        if (Number.isFinite(stock) && stock > 0) {
+            badge.className = 'stock-badge stock-en';
+            badge.textContent = 'En stock: ' + stock;
+        } else {
+            badge.className = 'stock-badge stock-agotado';
+            badge.textContent = 'Sin stock';
+        }
+        return badge;
+    }
+
+    function crearCartaReciente(p) {
+        const carta = document.createElement('a');
+        carta.className = 'carta carta-reciente';
+        carta.href = 'detalle_producto.html?id=' + encodeURIComponent(p.id);
+        carta.title = 'Ver detalles de ' + p.nombre;
+
+        const tipo = document.createElement('div');
+        tipo.className = 'carta-tipo';
+        tipo.textContent = 'Cartas de MTG';
+
+        const nombre = document.createElement('div');
+        nombre.className = 'carta-nombre';
+        nombre.textContent = p.nombre;
+
+        const imagen = document.createElement('div');
+        imagen.className = 'carta-imagen';
+        if (p.imagen) {
+            const img = document.createElement('img');
+            img.src = p.imagen;
+            img.alt = p.nombre;
+            img.loading = 'lazy';
+            imagen.appendChild(img);
+        } else {
+            imagen.textContent = 'MTG';
+        }
+
+        const descripcion = document.createElement('div');
+        descripcion.className = 'carta-descripcion';
+        descripcion.textContent = p.descripcion;
+
+        const precio = document.createElement('div');
+        precio.className = 'carta-precio';
+        precio.textContent = formatearPrecio(p.precio);
+
+        carta.appendChild(tipo);
+        carta.appendChild(nombre);
+        carta.appendChild(imagen);
+        carta.appendChild(descripcion);
+        carta.appendChild(badgeStock(p));
+        carta.appendChild(precio);
+
+        return carta;
+    }
+
+    function cargarRecientes() {
+        const contenedor = document.getElementById('recientes');
+        const vacio = document.getElementById('recientesVacio');
+        const error = document.getElementById('recientesError');
+
+        const consulta = query(productosRef, orderBy('createdAt', 'desc'));
+        getDocs(consulta)
+            .then(function (snapshot) {
+                const productos = [];
+                snapshot.forEach(function (doc) {
+                    productos.push({ id: doc.id, ...doc.data() });
+                });
+
+                const recientes = productos.slice(0, 8);
+
+                contenedor.innerHTML = '';
+                vacio.style.display = recientes.length === 0 ? 'block' : 'none';
+                error.style.display = 'none';
+
+                recientes.forEach(function (p) {
+                    contenedor.appendChild(crearCartaReciente(p));
+                });
+            })
+            .catch(function () {
+                error.style.display = 'block';
+                vacio.style.display = 'none';
+            });
+    }
+
+    window.addEventListener('DOMContentLoaded', cargarRecientes);
 </script>
 
 </body>
