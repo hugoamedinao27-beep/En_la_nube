@@ -25,6 +25,7 @@
         <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
         <a href="registrar_producto.html" class="btn btn-registrar" id="linkRegistrarProducto" style="display: none;">Registrar Producto</a>
         <a href="ver_pedidos.html" class="btn btn-login" id="linkVerPedidos" style="display: none;">Ver Pedidos</a>
+        <a href="pedidos_pendientes.html" class="btn btn-registrar" id="linkPedidosPendientes" style="display: none;">Pedidos Pendientes</a>
         <button type="button" id="btnCerrarSesion" class="btn btn-login">Cerrar Sesión</button>
     </div>
 </div>
@@ -37,6 +38,7 @@
     const usuarioSesion = document.getElementById('usuarioSesion');
     const linkRegistrarProducto = document.getElementById('linkRegistrarProducto');
     const linkVerPedidos = document.getElementById('linkVerPedidos');
+    const linkPedidosPendientes = document.getElementById('linkPedidosPendientes');
 
     onAuthStateChanged(auth, function (user) {
         if (user && !user.isAnonymous) {
@@ -47,6 +49,7 @@
             obtenerEsAdmin().then(function (admin) {
                 linkRegistrarProducto.style.display = admin ? '' : 'none';
                 linkVerPedidos.style.display = admin ? '' : 'none';
+                linkPedidosPendientes.style.display = admin ? '' : 'none';
             });
         } else {
             botonesInvitado.style.display = 'flex';

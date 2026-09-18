@@ -466,6 +466,14 @@ button:hover {
     background: #b91c1c;
 }
 
+.btn-despacho {
+    background: #16a34a;
+}
+
+.btn-despacho:hover {
+    background: #15803d;
+}
+
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -595,6 +603,11 @@ button:hover {
 .estado-cancelado {
     background: #fee2e2;
     color: #b91c1c;
+}
+
+.estado-listo_para_despacho {
+    background: #dbeafe;
+    color: #1d4ed8;
 }
 
 .pedido-acciones {

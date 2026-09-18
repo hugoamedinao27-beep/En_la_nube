@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ver Pedidos</title>
+    <title>Pedidos Pendientes</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <div class="card card-lista">
-    <h1>Ver Pedidos</h1>
-    <h2>Pedidos de los clientes</h2>
-    <p>Aqui se muestran los pedidos que dejaron los clientes registrados.</p>
+    <h1>Pedidos Pendientes</h1>
+    <h2>Pedidos listos para despachar</h2>
+    <p>Aqui se muestran los pedidos pendientes. Marcalos como listos para despacho cuando esten preparados.</p>
 
     <div id="listaPedidos" class="pedidos"></div>
 
-    <p id="vacio" class="mensaje" style="display:none;">No hay pedidos todavia.</p>
+    <p id="vacio" class="mensaje" style="display:none;">No hay pedidos pendientes.</p>
 
-    <a href="index.html" class="btn btn-volver">Volver al inicio</a>
+    <div class="pedido-acciones" style="justify-content:center; gap:12px;">
+        <a href="ver_pedidos.html" class="btn btn-ver">Ver todos los pedidos</a>
+        <a href="index.html" class="btn btn-volver">Volver al inicio</a>
+    </div>
 </div>
 
 <script type="module">
-    import { db, collection, getDocs, query, orderBy, updateDoc, doc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
+    import { db, collection, getDocs, query, where, updateDoc, doc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
 
     obtenerEsAdmin().then(function (admin) {
         if (!admin) {
@@ -45,20 +48,8 @@
         return numero.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 });
     }
 
-    const ETIQUETAS_ESTADO = {
-        pendiente: 'Pendiente',
-        listo_para_despacho: 'Listo para despacho',
-        entregado: 'Entregado',
-        cancelado: 'Cancelado'
-    };
-
-    function etiquetaEstado(estado) {
-        const clave = estado || 'pendiente';
-        return ETIQUETAS_ESTADO[clave] || clave;
-    }
-
     function cargarPedidos() {
-        const consulta = query(collection(db, 'pedidos'), orderBy('fecha', 'desc'));
+        const consulta = query(collection(db, 'pedidos'), where('estado', '==', 'pendiente'));
         getDocs(consulta)
             .then(function (snapshot) {
                 const contenedor = document.getElementById('listaPedidos');
@@ -71,14 +62,30 @@
                 }
 
                 vacio.style.display = 'none';
+
+                const pedidos = [];
                 snapshot.forEach(function (docSnap) {
-                    contenedor.appendChild(crearPedido(docSnap.id, docSnap.data()));
+                    pedidos.push({ id: docSnap.id, datos: docSnap.data() });
+                });
+
+                pedidos.sort(function (a, b) {
+                    return obtenerMillis(b.datos.fecha) - obtenerMillis(a.datos.fecha);
+                });
+
+                pedidos.forEach(function (pedido) {
+                    contenedor.appendChild(crearPedido(pedido.id, pedido.datos));
                 });
             })
             .catch(function (error) {
                 document.getElementById('vacio').textContent = 'No se pudieron cargar los pedidos: ' + error.message;
                 document.getElementById('vacio').style.display = 'block';
             });
+    }
+
+    function obtenerMillis(fecha) {
+        if (fecha && typeof fecha.toMillis === 'function') return fecha.toMillis();
+        if (fecha && typeof fecha.toDate === 'function') return fecha.toDate().getTime();
+        return 0;
     }
 
     function crearPedido(id, p) {
@@ -130,48 +137,36 @@
         info.appendChild(fecha);
         info.appendChild(precio);
 
-        const estado = document.createElement('div');
-        estado.className = 'pedido-estado estado-' + (p.estado || 'pendiente');
-        estado.textContent = etiquetaEstado(p.estado);
-
         const acciones = document.createElement('div');
         acciones.className = 'pedido-acciones';
 
-        const btnEntregado = document.createElement('button');
-        btnEntregado.type = 'button';
-        btnEntregado.className = 'btn-accion btn-editar';
-        btnEntregado.textContent = 'Entregado';
-        btnEntregado.disabled = p.estado === 'entregado';
-        btnEntregado.onclick = function () {
-            actualizarEstado(id, 'entregado');
+        const btnDespacho = document.createElement('button');
+        btnDespacho.type = 'button';
+        btnDespacho.className = 'btn-accion btn-despacho';
+        btnDespacho.textContent = 'Listo para despacho';
+        btnDespacho.onclick = function () {
+            marcarListoParaDespacho(id, btnDespacho);
         };
 
-        const btnCancelado = document.createElement('button');
-        btnCancelado.type = 'button';
-        btnCancelado.className = 'btn-accion btn-eliminar';
-        btnCancelado.textContent = 'Cancelar';
-        btnCancelado.disabled = p.estado === 'cancelado';
-        btnCancelado.onclick = function () {
-            actualizarEstado(id, 'cancelado');
-        };
-
-        acciones.appendChild(btnEntregado);
-        acciones.appendChild(btnCancelado);
+        acciones.appendChild(btnDespacho);
 
         pedido.appendChild(info);
-        pedido.appendChild(estado);
         pedido.appendChild(acciones);
 
         return pedido;
     }
 
-    function actualizarEstado(id, nuevoEstado) {
+    function marcarListoParaDespacho(id, btn) {
+        btn.disabled = true;
+        btn.textContent = 'Procesando...';
         updateDoc(doc(db, 'pedidos', id), {
-            estado: nuevoEstado,
+            estado: 'listo_para_despacho',
             actualizado: serverTimestamp()
         }).then(function () {
             cargarPedidos();
         }).catch(function (error) {
+            btn.disabled = false;
+            btn.textContent = 'Listo para despacho';
             alert('Error al actualizar el pedido: ' + error.message);
         });
     }
