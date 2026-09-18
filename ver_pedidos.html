@@ -6,7 +6,14 @@
     <title>Ver Pedidos</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="pagina-pedidos">
+
+<header class="mini-hero">
+    <a href="index.html" class="mini-hero-marca">
+        <img src="Imagenes/bluecardlogofinal-colorcorregido8131.png" alt="Logo Cartón Pintado" class="mini-hero-logo">
+        <span>Cartón Pintado</span>
+    </a>
+</header>
 
 <div class="card card-lista">
     <h1>Ver Pedidos</h1>
@@ -70,8 +77,10 @@
     }
 
     function cargarPedidos() {
-        const consulta = query(collection(db, 'pedidos'), orderBy('fecha', 'desc'));
-        getDocs(consulta)
+        cargarProductosParaImagenes()
+            .then(function () {
+                return getDocs(query(collection(db, 'pedidos'), orderBy('fecha', 'desc')));
+            })
             .then(function (snapshot) {
                 const contenedor = document.getElementById('listaPedidos');
                 const vacio = document.getElementById('vacio');
@@ -114,6 +123,28 @@
         info.className = 'pedido-info';
 
         items.forEach(function (item) {
+            const fila = document.createElement('div');
+            fila.className = 'pedido-fila';
+
+            const mini = document.createElement('div');
+            mini.className = 'pedido-mini';
+            const producto = (mapaProductos || {})[item.productoId] || {};
+            const src = producto.imagen || item.imagen;
+            if (src) {
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = item.productoNombre || 'Carta';
+                img.loading = 'lazy';
+                mini.appendChild(img);
+            } else {
+                const span = document.createElement('span');
+                span.textContent = 'MTG';
+                mini.appendChild(span);
+            }
+
+            const infoFila = document.createElement('div');
+            infoFila.className = 'pedido-fila-info';
+
             const linea = document.createElement('div');
             linea.className = 'pedido-nombre';
             linea.textContent = item.productoNombre + '  x' + item.cantidad;
@@ -122,8 +153,13 @@
             sub.className = 'pedido-fecha';
             sub.textContent = formatearPrecio(Number(item.productoPrecio)) + ' c/u = ' + formatearPrecio(Number(item.productoPrecio) * Number(item.cantidad));
 
-            info.appendChild(linea);
-            info.appendChild(sub);
+            infoFila.appendChild(linea);
+            infoFila.appendChild(sub);
+
+            fila.appendChild(mini);
+            fila.appendChild(infoFila);
+
+            info.appendChild(fila);
         });
 
         const cliente = document.createElement('div');
@@ -282,6 +318,10 @@
         meta.appendChild(fecha);
         if (p.actualizado) meta.appendChild(actualizado);
 
+        const subtitulo = document.createElement('div');
+        subtitulo.className = 'detalle-pedido-subtitulo';
+        subtitulo.textContent = 'Cartas del pedido';
+
         const lista = document.createElement('div');
         lista.className = 'detalle-pedido-lista';
 
@@ -331,6 +371,7 @@
 
         contenedor.appendChild(cabecera);
         contenedor.appendChild(meta);
+        contenedor.appendChild(subtitulo);
         contenedor.appendChild(lista);
         contenedor.appendChild(totalDiv);
 

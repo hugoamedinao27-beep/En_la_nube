@@ -610,10 +610,52 @@ body.pagina-ficha {
     gap: 12px;
     align-items: center;
     justify-content: space-between;
-    background: #fafafa;
-    border: 1px solid #dddddd;
-    border-radius: 8px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7f8fc 100%);
+    border: 1px solid #e3e6ef;
+    border-left: 4px solid #caa64c;
+    border-radius: 10px;
     padding: 14px 16px;
+    box-shadow: 0 2px 6px rgba(16, 34, 77, 0.06);
+}
+
+.pedido-fila {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px dashed #e5e7eb;
+}
+
+.pedido-fila:last-child {
+    border-bottom: none;
+}
+
+.pedido-fila-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pedido-mini {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 50px;
+    border: 1px solid #b89a3e;
+    border-radius: 3px;
+    background: linear-gradient(135deg, #f0d98b, #caa64c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-weight: 700;
+    font-size: 10px;
+    color: #1e3a8a;
+}
+
+.pedido-mini img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
 }
 
 .pedido-info {
@@ -1053,18 +1095,19 @@ body.inicio {
 
 .detalle-linea-imagen {
     flex: 0 0 auto;
-    width: 48px;
-    height: 67px;
+    width: 63px;
+    height: 88px;
     border: 1px solid #b89a3e;
-    border-radius: 4px;
+    border-radius: 5px;
     background: linear-gradient(135deg, #f0d98b, #caa64c);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     font-weight: 700;
-    font-size: 12px;
+    font-size: 13px;
     color: #1e3a8a;
+    box-shadow: inset 0 0 0 2px #f8ecbc;
 }
 
 .detalle-linea-imagen img {
@@ -1096,4 +1139,29 @@ body.inicio {
     font-weight: 700;
     color: #caa64c;
     margin-top: 14px;
+}
+
+.detalle-pedido-subtitulo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #10224d;
+    margin-bottom: 6px;
+}
+
+/* ── Pagina de pedidos ── */
+body.pagina-pedidos {
+    display: block;
+    padding: 0 0 40px;
+    background: linear-gradient(160deg, #f6f3ec 0%, #e8eefa 100%);
+}
+
+.pagina-pedidos .card-lista {
+    margin: 32px auto 0;
+}
+
+.pagina-pedidos .pedido-precio {
+    color: #10224d;
+    font-size: 16px;
 }
