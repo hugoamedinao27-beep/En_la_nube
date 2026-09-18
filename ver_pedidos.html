@@ -70,15 +70,37 @@
     }
 
     function crearPedido(id, p) {
+        const items = (Array.isArray(p.items) && p.items.length > 0)
+            ? p.items
+            : [{
+                productoId: p.productoId,
+                productoNombre: p.productoNombre,
+                productoPrecio: p.productoPrecio,
+                cantidad: p.cantidad || 1
+            }];
+
+        const total = Number.isFinite(Number(p.total))
+            ? Number(p.total)
+            : items.reduce(function (t, i) { return t + Number(i.productoPrecio) * Number(i.cantidad); }, 0);
+
         const pedido = document.createElement('div');
         pedido.className = 'pedido';
 
         const info = document.createElement('div');
         info.className = 'pedido-info';
 
-        const nombre = document.createElement('div');
-        nombre.className = 'pedido-nombre';
-        nombre.textContent = p.productoNombre + '  x' + p.cantidad;
+        items.forEach(function (item) {
+            const linea = document.createElement('div');
+            linea.className = 'pedido-nombre';
+            linea.textContent = item.productoNombre + '  x' + item.cantidad;
+
+            const sub = document.createElement('div');
+            sub.className = 'pedido-fecha';
+            sub.textContent = formatearPrecio(Number(item.productoPrecio)) + ' c/u = ' + formatearPrecio(Number(item.productoPrecio) * Number(item.cantidad));
+
+            info.appendChild(linea);
+            info.appendChild(sub);
+        });
 
         const cliente = document.createElement('div');
         cliente.className = 'pedido-cliente';
@@ -90,9 +112,8 @@
 
         const precio = document.createElement('div');
         precio.className = 'pedido-precio';
-        precio.textContent = formatearPrecio(Number(p.productoPrecio) * Number(p.cantidad));
+        precio.textContent = 'Total: ' + formatearPrecio(total);
 
-        info.appendChild(nombre);
         info.appendChild(cliente);
         info.appendChild(fecha);
         info.appendChild(precio);

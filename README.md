@@ -7,7 +7,7 @@ Pagina para registrar y ver cartas de Magic. Los datos se guardan en la nube (Fi
 - `index.html` - inicio (con estado de sesion y roles)
 - `login.html` - iniciar sesion
 - `registro.html` - crear cuenta de cliente (puede ver y pedir cartas)
-- `ver_productos.html` - ver y pedir cartas (con buscador, orden y filtro de stock)
+- `ver_productos.html` - ver cartas, armar un carrito y finalizar el pedido (PDF)
 - `registrar_producto.html` - cargar una carta (solo administrador)
 - `editar_producto.html` - modificar una carta (solo administrador)
 - `ver_pedidos.html` - gestionar pedidos de clientes (solo administrador)
@@ -40,7 +40,21 @@ productos solo a admins y crear/ver pedidos a clientes registrados).
 
 Una carta tiene: nombre, descripcion, precio, stock, imagen y fecha. El ID lo genera Firestore.
 
-Un pedido tiene: producto, cantidad, usuario (email/UID), estado (`pendiente`, `entregado` o `cancelado`) y fecha.
+Un pedido tiene: lista de cartas (`items` con nombre, precio y cantidad), `total`,
+usuario (email/UID), estado (`pendiente`, `entregado` o `cancelado`) y fecha.
+
+## Carrito y PDF
+
+En `ver_productos.html`, cualquier persona puede ir agregando cartas a un carrito
+(se guarda en el navegador). Al **Finalizar pedido**:
+
+1. Si no hay sesion, pide iniciar sesion o crear cuenta.
+2. Guarda el pedido completo en Firestore (lo ve el admin en `ver_pedidos.html`).
+3. Genera y descarga un **PDF** (`pedido_carton_pintado.pdf`) con la lista de
+   cartas, cantidades, precios y el total.
+
+Tambien hay un boton **Descargar PDF** para bajar el detalle del carrito sin
+guardarlo como pedido.
 
 ## Abrir en local
 

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ver Productos</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -44,9 +45,27 @@
         <button type="button" id="cerrarModal" class="btn-cerrar" title="Cerrar">&times;</button>
         <div id="detalleModal" class="detalle"></div>
         <div class="modal-acciones">
-            <button type="button" id="btnPedirModal" class="btn-accion btn-pedir btn-grande">Pedir esta carta</button>
+            <button type="button" id="btnPedirModal" class="btn-accion btn-pedir btn-grande">Agregar al carrito</button>
             <button type="button" id="btnModificarModal" class="btn-accion btn-editar btn-grande">Modificar</button>
             <button type="button" id="btnEliminarModal" class="btn-accion btn-eliminar btn-grande">Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<button type="button" id="btnCarritoFlotante" class="carrito-flotante">Ver carrito (0)</button>
+
+<div id="modalCarrito" class="modal-overlay">
+    <div class="modal-contenido">
+        <button type="button" id="cerrarCarrito" class="btn-cerrar" title="Cerrar">&times;</button>
+        <h2 style="margin:0 0 10px;">Tu carrito</h2>
+        <div id="listaCarrito"></div>
+        <p id="carritoVacio" class="mensaje">El carrito está vacío. Agregá cartas para pedirlas.</p>
+        <div id="resumenCarrito" style="display:none;">
+            <div class="carrito-total" id="totalCarrito"></div>
+            <div class="modal-acciones">
+                <button type="button" id="btnDescargarPDF" class="btn-accion btn-pedir btn-grande">Descargar PDF</button>
+                <button type="button" id="btnFinalizarPedido" class="btn-accion btn-editar btn-grande">Finalizar pedido</button>
+            </div>
         </div>
     </div>
 </div>
@@ -56,11 +75,9 @@
 
     let productosDisponibles = [];
     let esAdmin = false;
-    let esCliente = false;
 
     onAuthStateChanged(auth, function (user) {
         const autenticado = user && !user.isAnonymous;
-        esCliente = autenticado;
         esAdmin = false;
         if (autenticado) {
             obtenerEsAdmin().then(function (admin) {
@@ -208,12 +225,22 @@
         precio.className = 'carta-precio';
         precio.textContent = formatearPrecio(p.precio);
 
+        const botonAgregar = document.createElement('button');
+        botonAgregar.type = 'button';
+        botonAgregar.className = 'btn-accion btn-agregar btn-grande';
+        botonAgregar.textContent = 'Agregar al carrito';
+        botonAgregar.onclick = function (e) {
+            e.stopPropagation();
+            agregarAlCarrito(p);
+        };
+
         carta.appendChild(tipo);
         carta.appendChild(nombre);
         carta.appendChild(imagen);
         carta.appendChild(descripcion);
         carta.appendChild(stock);
         carta.appendChild(precio);
+        carta.appendChild(botonAgregar);
 
         carta.addEventListener('click', function () {
             abrirModal(p);
@@ -293,9 +320,9 @@
         contenedor.appendChild(ficha);
 
         const btnPedir = document.getElementById('btnPedirModal');
-        btnPedir.style.display = esCliente ? '' : 'none';
+        btnPedir.style.display = '';
         btnPedir.onclick = function () {
-            crearPedido(producto);
+            agregarAlCarrito(producto);
         };
 
         const btnModificar = document.getElementById('btnModificarModal');
@@ -323,37 +350,263 @@
         document.getElementById('modal').style.display = 'flex';
     }
 
-    function crearPedido(producto) {
-        const cantidad = prompt('¿Cuántas unidades querés pedir de "' + producto.nombre + '"?', '1');
-        if (cantidad === null) return;
+    // ── Carrito (guardado en localStorage) ──
+    const CLAVE_CARRITO = 'carrito';
 
-        const n = Number(cantidad);
-        if (!Number.isInteger(n) || n < 1) {
-            alert('La cantidad debe ser un número entero mayor o igual a 1.');
+    function obtenerCarrito() {
+        try {
+            const guardado = JSON.parse(localStorage.getItem(CLAVE_CARRITO) || '[]');
+            return Array.isArray(guardado) ? guardado : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function guardarCarrito(items) {
+        localStorage.setItem(CLAVE_CARRITO, JSON.stringify(items));
+        actualizarContadorCarrito();
+    }
+
+    function agregarAlCarrito(producto) {
+        const carrito = obtenerCarrito();
+        const existente = carrito.find(function (item) { return item.id === producto.id; });
+        if (existente) {
+            existente.cantidad += 1;
+        } else {
+            carrito.push({
+                id: producto.id,
+                nombre: producto.nombre,
+                precio: Number(producto.precio),
+                imagen: producto.imagen || '',
+                cantidad: 1
+            });
+        }
+        guardarCarrito(carrito);
+        alert('"' + producto.nombre + '" se agregó al carrito.');
+    }
+
+    function cambiarCantidad(id, delta) {
+        const carrito = obtenerCarrito();
+        const item = carrito.find(function (i) { return i.id === id; });
+        if (!item) return;
+        item.cantidad += delta;
+        if (item.cantidad < 1) item.cantidad = 1;
+        guardarCarrito(carrito);
+        renderCarrito();
+    }
+
+    function quitarDelCarrito(id) {
+        guardarCarrito(obtenerCarrito().filter(function (item) { return item.id !== id; }));
+        renderCarrito();
+    }
+
+    function totalCarrito() {
+        return obtenerCarrito().reduce(function (total, item) {
+            return total + Number(item.precio) * Number(item.cantidad);
+        }, 0);
+    }
+
+    function cantidadTotal() {
+        return obtenerCarrito().reduce(function (total, item) {
+            return total + Number(item.cantidad);
+        }, 0);
+    }
+
+    function actualizarContadorCarrito() {
+        document.getElementById('btnCarritoFlotante').textContent = 'Ver carrito (' + cantidadTotal() + ')';
+    }
+
+    function renderCarrito() {
+        const carrito = obtenerCarrito();
+        const lista = document.getElementById('listaCarrito');
+        const vacio = document.getElementById('carritoVacio');
+        const resumen = document.getElementById('resumenCarrito');
+
+        lista.innerHTML = '';
+
+        if (carrito.length === 0) {
+            vacio.style.display = 'block';
+            resumen.style.display = 'none';
+            actualizarContadorCarrito();
+            return;
+        }
+
+        vacio.style.display = 'none';
+        resumen.style.display = 'block';
+        document.getElementById('totalCarrito').textContent = 'Total: ' + formatearPrecio(totalCarrito());
+
+        carrito.forEach(function (item) {
+            const fila = document.createElement('div');
+            fila.className = 'carrito-item';
+
+            const info = document.createElement('div');
+            info.className = 'carrito-item-info';
+
+            const nombre = document.createElement('div');
+            nombre.className = 'carrito-item-nombre';
+            nombre.textContent = item.nombre;
+
+            const detalle = document.createElement('div');
+            detalle.className = 'carrito-item-detalle';
+            detalle.textContent = formatearPrecio(item.precio) + ' c/u';
+
+            info.appendChild(nombre);
+            info.appendChild(detalle);
+
+            const acciones = document.createElement('div');
+            acciones.className = 'carrito-item-acciones';
+
+            const btnMenos = document.createElement('button');
+            btnMenos.type = 'button';
+            btnMenos.className = 'carrito-boton-cant';
+            btnMenos.textContent = '-';
+            btnMenos.onclick = function () { cambiarCantidad(item.id, -1); };
+
+            const cantidad = document.createElement('span');
+            cantidad.textContent = item.cantidad;
+
+            const btnMas = document.createElement('button');
+            btnMas.type = 'button';
+            btnMas.className = 'carrito-boton-cant';
+            btnMas.textContent = '+';
+            btnMas.onclick = function () { cambiarCantidad(item.id, 1); };
+
+            const subtotal = document.createElement('span');
+            subtotal.className = 'carrito-item-detalle';
+            subtotal.textContent = '= ' + formatearPrecio(Number(item.precio) * Number(item.cantidad));
+
+            const quitar = document.createElement('button');
+            quitar.type = 'button';
+            quitar.className = 'carrito-quitar';
+            quitar.textContent = 'Quitar';
+            quitar.onclick = function () { quitarDelCarrito(item.id); };
+
+            acciones.appendChild(btnMenos);
+            acciones.appendChild(cantidad);
+            acciones.appendChild(btnMas);
+            acciones.appendChild(subtotal);
+            acciones.appendChild(quitar);
+
+            fila.appendChild(info);
+            fila.appendChild(acciones);
+
+            lista.appendChild(fila);
+        });
+
+        actualizarContadorCarrito();
+    }
+
+    // ── PDF ──
+    function generarPDF(items, clienteEmail, idPedido) {
+        const doc = new window.jspdf.jsPDF();
+
+        doc.setFontSize(18);
+        doc.text('Cartón Pintado', 14, 20);
+        doc.setFontSize(11);
+        doc.text('Pedido de cartas' + (idPedido ? ' (ID ' + idPedido + ')' : ''), 14, 28);
+        doc.text('Cliente: ' + (clienteEmail || '-'), 14, 35);
+        doc.text('Fecha: ' + new Date().toLocaleString('es-AR'), 14, 42);
+
+        let y = 52;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Carta', 14, y);
+        doc.text('Cant.', 150, y);
+        doc.text('Precio', 165, y);
+        doc.setFont('helvetica', 'normal');
+        y += 6;
+
+        items.forEach(function (item) {
+            if (y > 270) {
+                doc.addPage();
+                y = 20;
+            }
+            doc.text(String(item.nombre).slice(0, 55), 14, y);
+            doc.text(String(item.cantidad), 150, y);
+            doc.text(formatearPrecio(Number(item.precio)), 165, y);
+            y += 6;
+        });
+
+        y += 4;
+        doc.setFont('helvetica', 'bold');
+        doc.text('TOTAL: ' + formatearPrecio(items.reduce(function (t, i) {
+            return t + Number(i.precio) * Number(i.cantidad);
+        }, 0)), 14, y);
+
+        doc.save('pedido_carton_pintado.pdf');
+    }
+
+    // ── Finalizar pedido ──
+    function finalizarPedido() {
+        const carrito = obtenerCarrito();
+        if (carrito.length === 0) {
+            alert('El carrito está vacío.');
             return;
         }
 
         const user = auth.currentUser;
         if (!user) {
-            alert('Tenés que iniciar sesión para pedir cartas.');
+            location.href = 'login.html?destino=' + encodeURIComponent(window.location.pathname);
             return;
         }
 
+        const items = carrito.map(function (item) {
+            return {
+                productoId: item.id,
+                productoNombre: item.nombre,
+                productoPrecio: item.precio,
+                cantidad: item.cantidad
+            };
+        });
+
         addDoc(collection(db, 'pedidos'), {
-            productoId: producto.id,
-            productoNombre: producto.nombre,
-            productoPrecio: Number(producto.precio),
-            cantidad: n,
+            items: items,
+            total: items.reduce(function (t, i) { return t + Number(i.productoPrecio) * Number(i.cantidad); }, 0),
             usuarioId: user.uid,
             usuarioEmail: user.email,
             estado: 'pendiente',
             fecha: serverTimestamp()
-        }).then(function () {
-            alert('Pedido registrado. Te contactamos por email para confirmarlo.');
+        }).then(function (docRef) {
+            guardarCarrito([]);
+            renderCarrito();
+            cerrarCarrito();
+            generarPDF(items, user.email, docRef.id);
+            alert('Pedido registrado. Se descargó el PDF con tus cartas.');
         }).catch(function (error) {
             alert('Error al registrar el pedido: ' + error.message);
         });
     }
+
+    function abrirCarrito() {
+        renderCarrito();
+        document.getElementById('modalCarrito').style.display = 'flex';
+    }
+
+    function cerrarCarrito() {
+        document.getElementById('modalCarrito').style.display = 'none';
+    }
+
+    document.getElementById('btnCarritoFlotante').addEventListener('click', abrirCarrito);
+    document.getElementById('cerrarCarrito').addEventListener('click', cerrarCarrito);
+    document.getElementById('btnFinalizarPedido').addEventListener('click', finalizarPedido);
+    document.getElementById('btnDescargarPDF').addEventListener('click', function () {
+        const carrito = obtenerCarrito();
+        if (carrito.length === 0) return;
+        generarPDF(carrito, null, null);
+    });
+
+    document.getElementById('modalCarrito').addEventListener('click', function (e) {
+        if (e.target === this) {
+            cerrarCarrito();
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            cerrarCarrito();
+            cerrarModal();
+        }
+    });
 
     function cerrarModal() {
         document.getElementById('modal').style.display = 'none';
@@ -363,12 +616,6 @@
 
     document.getElementById('modal').addEventListener('click', function (e) {
         if (e.target === this) {
-            cerrarModal();
-        }
-    });
-
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
             cerrarModal();
         }
     });

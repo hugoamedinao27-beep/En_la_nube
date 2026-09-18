@@ -606,3 +606,99 @@ button:hover {
     opacity: 0.5;
     cursor: default;
 }
+
+/* ── Carrito ── */
+.btn-agregar {
+    background: #16a34a;
+    margin-top: 10px;
+}
+
+.btn-agregar:hover {
+    background: #15803d;
+}
+
+.carrito-flotante {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.carrito-flotante:hover {
+    background: #1d4ed8;
+}
+
+.carrito-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #eeeeee;
+    font-size: 14px;
+}
+
+.carrito-item-info {
+    flex: 1;
+    min-width: 160px;
+}
+
+.carrito-item-nombre {
+    font-weight: 700;
+    color: #111111;
+}
+
+.carrito-item-detalle {
+    color: #666666;
+    font-size: 13px;
+}
+
+.carrito-item-acciones {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.carrito-boton-cant {
+    background: #eef2ff;
+    color: #2563eb;
+    border: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.carrito-boton-cant:hover {
+    background: #e0e7ff;
+}
+
+.carrito-quitar {
+    background: none;
+    border: none;
+    color: #dc2626;
+    cursor: pointer;
+    font-size: 13px;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.carrito-total {
+    text-align: right;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 14px 0 0;
+}
