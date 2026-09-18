@@ -18,8 +18,9 @@ Pagina para registrar y ver cartas de Magic. Los datos se guardan en la nube (Fi
 - **Cualquier visitante** puede ver las cartas sin registrarse.
 - **Clientes** (se registran en `registro.html` con email/contraseña): ven las
   cartas y pueden dejar pedidos desde la ficha de cada carta.
-- **Administradores**: ademas, registran/editan/eliminan cartas y gestionan los
-  pedidos (`ver_pedidos.html`).
+- **Administradores**: ademas, registran/editan/eliminan cartas, gestionan los
+  pedidos (`ver_pedidos.html`) y pueden ajustar el stock directo desde la ficha
+  de cada carta en `ver_productos.html`.
 
 Para configurar los roles desde cero:
 
