@@ -20,6 +20,17 @@
     <a href="index.html" class="btn btn-volver">Volver al inicio</a>
 </div>
 
+<div id="modalDetalle" class="modal-overlay">
+    <div class="modal-contenido">
+        <button type="button" id="cerrarDetalle" class="btn-cerrar" title="Cerrar">&times;</button>
+        <div id="contenidoDetalle" class="detalle"></div>
+        <div class="modal-acciones" id="accionesDetalle" style="display:none;">
+            <button type="button" id="btnEntregadoModal" class="btn-accion btn-editar btn-grande">Entregado</button>
+            <button type="button" id="btnCanceladoModal" class="btn-accion btn-eliminar btn-grande">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import { db, collection, getDocs, query, orderBy, updateDoc, doc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
     import { enviarAvisoPedido } from './emailPedido.js';
@@ -138,6 +149,16 @@
         const acciones = document.createElement('div');
         acciones.className = 'pedido-acciones';
 
+        const btnDetalle = document.createElement('button');
+        btnDetalle.type = 'button';
+        btnDetalle.className = 'btn-accion btn-pedir';
+        btnDetalle.textContent = 'Ver detalle';
+        btnDetalle.onclick = function () {
+            abrirDetalle(id, p);
+        };
+
+        acciones.appendChild(btnDetalle);
+
         const btnEntregado = document.createElement('button');
         btnEntregado.type = 'button';
         btnEntregado.className = 'btn-accion btn-editar';
@@ -166,7 +187,7 @@
         return pedido;
     }
 
-    function actualizarEstado(id, nuevoEstado, pedido) {
+    function actualizarEstado(id, nuevoEstado, pedido, despuesDeGuardar) {
         const estadoAnterior = pedido ? pedido.estado : null;
         updateDoc(doc(db, 'pedidos', id), {
             estado: nuevoEstado,
@@ -180,10 +201,168 @@
                     }
                 });
             }
+            if (despuesDeGuardar) despuesDeGuardar();
         }).catch(function (error) {
             alert('Error al actualizar el pedido: ' + error.message);
         });
     }
+
+    // ── Detalle completo del pedido ──
+    let mapaProductos = null;
+    let pedidoActual = null;
+
+    function cargarProductosParaImagenes() {
+        if (mapaProductos) return Promise.resolve(mapaProductos);
+        return getDocs(query(collection(db, 'productos')))
+            .then(function (snapshot) {
+                mapaProductos = {};
+                snapshot.forEach(function (docSnap) {
+                    mapaProductos[docSnap.id] = docSnap.data();
+                });
+                return mapaProductos;
+            })
+            .catch(function () {
+                return {};
+            });
+    }
+
+    function construirItems(p) {
+        return (Array.isArray(p.items) && p.items.length > 0)
+            ? p.items
+            : [{
+                productoId: p.productoId,
+                productoNombre: p.productoNombre,
+                productoPrecio: p.productoPrecio,
+                cantidad: p.cantidad || 1
+            }];
+    }
+
+    function calcularTotal(p, items) {
+        return Number.isFinite(Number(p.total))
+            ? Number(p.total)
+            : items.reduce(function (t, i) { return t + Number(i.productoPrecio) * Number(i.cantidad); }, 0);
+    }
+
+    function abrirDetalle(id, p) {
+        document.getElementById('modalDetalle').style.display = 'flex';
+        const contenedor = document.getElementById('contenidoDetalle');
+        contenedor.innerHTML = '';
+        pedidoActual = Object.assign({ id: id }, p);
+
+        const items = construirItems(p);
+        const total = calcularTotal(p, items);
+
+        const cabecera = document.createElement('div');
+        cabecera.className = 'detalle-pedido-cabecera';
+
+        const titulo = document.createElement('h2');
+        titulo.className = 'detalle-pedido-titulo';
+        titulo.textContent = 'Pedido ' + id;
+
+        const estado = document.createElement('span');
+        estado.className = 'pedido-estado estado-' + (p.estado || 'pendiente');
+        estado.textContent = etiquetaEstado(p.estado);
+
+        cabecera.appendChild(titulo);
+        cabecera.appendChild(estado);
+
+        const meta = document.createElement('div');
+        meta.className = 'detalle-pedido-meta';
+
+        const cliente = document.createElement('div');
+        cliente.textContent = 'Cliente: ' + (p.usuarioEmail || 'Cliente');
+
+        const fecha = document.createElement('div');
+        fecha.textContent = 'Fecha: ' + formatearFecha(p.fecha);
+
+        const actualizado = document.createElement('div');
+        actualizado.textContent = p.actualizado ? 'Actualizado: ' + formatearFecha(p.actualizado) : '';
+
+        meta.appendChild(cliente);
+        meta.appendChild(fecha);
+        if (p.actualizado) meta.appendChild(actualizado);
+
+        const lista = document.createElement('div');
+        lista.className = 'detalle-pedido-lista';
+
+        items.forEach(function (item) {
+            const linea = document.createElement('div');
+            linea.className = 'detalle-linea';
+
+            const imagen = document.createElement('div');
+            imagen.className = 'detalle-linea-imagen';
+            const producto = (mapaProductos || {})[item.productoId] || {};
+            const src = producto.imagen || item.imagen;
+            if (src) {
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = item.productoNombre || 'Carta';
+                img.loading = 'lazy';
+                imagen.appendChild(img);
+            } else {
+                const span = document.createElement('span');
+                span.textContent = 'MTG';
+                imagen.appendChild(span);
+            }
+
+            const info = document.createElement('div');
+            info.className = 'detalle-linea-info';
+
+            const nombre = document.createElement('div');
+            nombre.className = 'detalle-linea-nombre';
+            nombre.textContent = item.productoNombre + '  x' + item.cantidad;
+
+            const sub = document.createElement('div');
+            sub.className = 'detalle-linea-sub';
+            sub.textContent = formatearPrecio(Number(item.productoPrecio)) + ' c/u = ' + formatearPrecio(Number(item.productoPrecio) * Number(item.cantidad));
+
+            info.appendChild(nombre);
+            info.appendChild(sub);
+
+            linea.appendChild(imagen);
+            linea.appendChild(info);
+
+            lista.appendChild(linea);
+        });
+
+        const totalDiv = document.createElement('div');
+        totalDiv.className = 'detalle-pedido-total';
+        totalDiv.textContent = 'Total: ' + formatearPrecio(total);
+
+        contenedor.appendChild(cabecera);
+        contenedor.appendChild(meta);
+        contenedor.appendChild(lista);
+        contenedor.appendChild(totalDiv);
+
+        const btnEntregado = document.getElementById('btnEntregadoModal');
+        const btnCancelado = document.getElementById('btnCanceladoModal');
+        document.getElementById('accionesDetalle').style.display = 'flex';
+        btnEntregado.disabled = p.estado === 'entregado';
+        btnCancelado.disabled = p.estado === 'cancelado';
+    }
+
+    function cerrarDetalle() {
+        document.getElementById('modalDetalle').style.display = 'none';
+        pedidoActual = null;
+    }
+
+    document.getElementById('cerrarDetalle').addEventListener('click', cerrarDetalle);
+
+    document.getElementById('modalDetalle').addEventListener('click', function (e) {
+        if (e.target === this) cerrarDetalle();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') cerrarDetalle();
+    });
+
+    document.getElementById('btnEntregadoModal').addEventListener('click', function () {
+        if (pedidoActual) actualizarEstado(pedidoActual.id, 'entregado', pedidoActual, cerrarDetalle);
+    });
+
+    document.getElementById('btnCanceladoModal').addEventListener('click', function () {
+        if (pedidoActual) actualizarEstado(pedidoActual.id, 'cancelado', pedidoActual, cerrarDetalle);
+    });
 </script>
 
 </body>
