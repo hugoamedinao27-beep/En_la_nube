@@ -1164,6 +1164,14 @@ body.inicio {
     margin-bottom: 18px;
 }
 
+.buscador-opciones {
+    margin-top: 10px;
+}
+
+.buscador-opciones .campo {
+    max-width: 240px;
+}
+
 .buscador-estado {
     font-size: 13px;
     color: #666666;

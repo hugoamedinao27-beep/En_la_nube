@@ -18,6 +18,16 @@
             <span>Buscar carta por nombre (Scryfall)</span>
             <input type="search" id="busquedaCarta" placeholder="Ej: Sol Ring, Lightning Bolt..." autocomplete="off">
         </label>
+        <div class="buscador-opciones">
+            <label class="campo">
+                <span>Filtrar artes</span>
+                <select id="uniqueModo" class="campo-select">
+                    <option value="cards">Una carta por nombre</option>
+                    <option value="art">Cada arte</option>
+                    <option value="prints">Todas las impresiones</option>
+                </select>
+            </label>
+        </div>
         <p id="estadoBusqueda" class="buscador-estado"></p>
         <div id="resultadosBusqueda" class="resultados-cartas"></div>
     </div>
@@ -190,6 +200,14 @@
         }, 600);
     });
 
+    document.getElementById('uniqueModo').addEventListener('change', function () {
+        clearTimeout(temporizadorBusqueda);
+        const termino = inputBusqueda.value.trim();
+        if (termino.length >= 2) {
+            buscarCartas(termino);
+        }
+    });
+
     function obtenerImagenCarta(carta, tamanio) {
         if (carta.image_uris && carta.image_uris[tamanio]) return carta.image_uris[tamanio];
         if (carta.card_faces && carta.card_faces[0] && carta.card_faces[0].image_uris) {
@@ -219,7 +237,8 @@
         estadoBusqueda.textContent = 'Buscando...';
         resultadosBusqueda.innerHTML = '';
 
-        fetch('https://api.scryfall.com/cards/search?q=' + encodeURIComponent(termino) + '&order=name&unique=cards')
+        const unique = document.getElementById('uniqueModo').value;
+        fetch('https://api.scryfall.com/cards/search?q=' + encodeURIComponent(termino) + '&order=name&unique=' + unique)
             .then(function (respuesta) {
                 if (!respuesta.ok) {
                     return respuesta.json().then(function (datos) {
@@ -272,7 +291,11 @@
 
             const detalles = document.createElement('div');
             detalles.className = 'resultado-carta-detalles';
-            detalles.textContent = (carta.type_line || '') + (carta.rarity ? ' · ' + carta.rarity : '');
+            const partesDetalle = [];
+            if (carta.type_line) partesDetalle.push(carta.type_line);
+            if (carta.rarity) partesDetalle.push(carta.rarity);
+            if (document.getElementById('uniqueModo').value === 'prints' && carta.set_name) partesDetalle.push(carta.set_name);
+            detalles.textContent = partesDetalle.join(' · ');
 
             info.appendChild(nombre);
             info.appendChild(detalles);
