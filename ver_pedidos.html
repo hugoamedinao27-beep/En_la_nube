@@ -22,6 +22,7 @@
 
 <script type="module">
     import { db, collection, getDocs, query, orderBy, updateDoc, doc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
+    import { enviarAvisoPedido } from './emailPedido.js';
 
     obtenerEsAdmin().then(function (admin) {
         if (!admin) {
@@ -143,7 +144,7 @@
         btnEntregado.textContent = 'Entregado';
         btnEntregado.disabled = p.estado === 'entregado';
         btnEntregado.onclick = function () {
-            actualizarEstado(id, 'entregado');
+            actualizarEstado(id, 'entregado', p);
         };
 
         const btnCancelado = document.createElement('button');
@@ -152,7 +153,7 @@
         btnCancelado.textContent = 'Cancelar';
         btnCancelado.disabled = p.estado === 'cancelado';
         btnCancelado.onclick = function () {
-            actualizarEstado(id, 'cancelado');
+            actualizarEstado(id, 'cancelado', p);
         };
 
         acciones.appendChild(btnEntregado);
@@ -165,12 +166,20 @@
         return pedido;
     }
 
-    function actualizarEstado(id, nuevoEstado) {
+    function actualizarEstado(id, nuevoEstado, pedido) {
+        const estadoAnterior = pedido ? pedido.estado : null;
         updateDoc(doc(db, 'pedidos', id), {
             estado: nuevoEstado,
             actualizado: serverTimestamp()
         }).then(function () {
             cargarPedidos();
+            if (nuevoEstado === 'entregado' && estadoAnterior !== 'entregado') {
+                enviarAvisoPedido(Object.assign({ id: id }, pedido), 'entregado').then(function (resultado) {
+                    if (!resultado.ok && resultado.error !== 'EmailJS sin configurar') {
+                        alert('El pedido se marcó como entregado, pero no se pudo enviar el correo: ' + resultado.error);
+                    }
+                });
+            }
         }).catch(function (error) {
             alert('Error al actualizar el pedido: ' + error.message);
         });

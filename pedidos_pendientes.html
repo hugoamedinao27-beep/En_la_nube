@@ -25,6 +25,7 @@
 
 <script type="module">
     import { db, collection, getDocs, query, where, updateDoc, doc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
+    import { enviarAvisoPedido } from './emailPedido.js';
 
     obtenerEsAdmin().then(function (admin) {
         if (!admin) {
@@ -145,7 +146,7 @@
         btnDespacho.className = 'btn-accion btn-despacho';
         btnDespacho.textContent = 'Listo para despacho';
         btnDespacho.onclick = function () {
-            marcarListoParaDespacho(id, btnDespacho);
+            marcarListoParaDespacho(id, btnDespacho, p);
         };
 
         acciones.appendChild(btnDespacho);
@@ -156,7 +157,7 @@
         return pedido;
     }
 
-    function marcarListoParaDespacho(id, btn) {
+    function marcarListoParaDespacho(id, btn, p) {
         btn.disabled = true;
         btn.textContent = 'Procesando...';
         updateDoc(doc(db, 'pedidos', id), {
@@ -164,6 +165,11 @@
             actualizado: serverTimestamp()
         }).then(function () {
             cargarPedidos();
+            enviarAvisoPedido(Object.assign({ id: id }, p), 'listo_para_despacho').then(function (resultado) {
+                if (!resultado.ok && resultado.error !== 'EmailJS sin configurar') {
+                    alert('El pedido quedó listo para despacho, pero no se pudo enviar el correo: ' + resultado.error);
+                }
+            });
         }).catch(function (error) {
             btn.disabled = false;
             btn.textContent = 'Listo para despacho';

@@ -11,6 +11,7 @@ Pagina para registrar y ver cartas de Magic. Los datos se guardan en la nube (Fi
 - `registrar_producto.html` - cargar una carta (solo administrador)
 - `editar_producto.html` - modificar una carta (solo administrador)
 - `ver_pedidos.html` - gestionar pedidos de clientes (solo administrador)
+- `pedidos_pendientes.html` - ver pedidos pendientes y marcarlos listos para despacho (solo administrador)
 - `detalle_producto.html` - ver una carta
 
 ## Cuentas y roles
@@ -42,7 +43,31 @@ productos solo a admins y crear/ver pedidos a clientes registrados).
 Una carta tiene: nombre, descripcion, precio, stock, imagen y fecha. El ID lo genera Firestore.
 
 Un pedido tiene: lista de cartas (`items` con nombre, precio y cantidad), `total`,
-usuario (email/UID), estado (`pendiente`, `entregado` o `cancelado`) y fecha.
+usuario (email/UID), estado (`pendiente`, `listo_para_despacho`, `entregado` o
+`cancelado`) y fecha.
+
+## Avisos por correo (EmailJS)
+
+Cuando el admin marca un pedido como **listo para despacho** o **entregado**, se le
+envia un correo al cliente con el detalle del pedido. Se usa [EmailJS](https://www.emailjs.com)
+desde el navegador (no hace falta backend). El codigo esta en `emailPedido.js`.
+
+Para activarlo:
+
+1. Crear una cuenta en https://www.emailjs.com (el plan gratis alcanza para una tienda chica).
+2. En **Email Services**, conectar una casilla (por ejemplo el Gmail de la tienda).
+3. En **Email Templates**, crear una plantilla con:
+   - **To Email**: `{{to_email}}`
+   - **Subject**: `{{asunto}}`
+   - **Body**: `Hola {{cliente}}` + `{{titulo}}` + `{{mensaje}}` + `{{detalle}}` +
+     `Total: {{total}}` + `Pedido: {{pedidoId}}`
+4. Copiar **Service ID**, **Template ID** y **Public Key** dentro de `EMAILJS` en `emailPedido.js`.
+5. En **Account > Security**, agregar los origenes permitidos:
+   `https://hugoamedinao27-beep.github.io` y `http://localhost:3000`.
+
+Mientras `EMAILJS` este vacio, la app funciona igual: solo avisa por consola que no
+se pudo enviar el correo. La **Public Key** queda visible en el HTML (es normal en
+EmailJS); nunca pongas ahi una clave privada.
 
 ## Carrito y PDF
 
