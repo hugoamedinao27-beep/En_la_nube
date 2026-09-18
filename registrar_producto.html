@@ -416,12 +416,12 @@
     }
 
     function analizarLista(texto) {
-        const lineas = texto.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l !== ''; });
+        const lineas = texto.replace(/^\uFEFF/, '').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l !== ''; });
         if (lineas.length === 0) return null;
 
         const cabecera = dividirLineaCSV(lineas[0]).map(function (h) { return h.toLowerCase(); });
         const iNombre = buscarColumna(cabecera, ['name', 'card name', 'nombre']);
-        if (iNombre === -1) return null;
+        if (iNombre === -1) return analizarListaTexto(lineas);
 
         const iCantidad = buscarColumna(cabecera, ['count', 'quantity', 'qty', 'total count']);
         const iSetCodigo = buscarColumna(cabecera, ['set code', 'setcode']);
@@ -460,6 +460,37 @@
                 filas[filas.length - 1].foil = (v === 'foil' || v === 'yes' || v === 'true' || v === '1' || v === 'si');
             }
         }
+        return filas;
+    }
+
+    function analizarListaTexto(lineas) {
+        const filas = [];
+        const patron = /^(\d+)\s+(.+?)(?:\(([A-Za-z0-9]{2,6})\))?(?:\s+(\d{1,6}[A-Za-z]?))?$/;
+        let omitidas = 0;
+        lineas.forEach(function (linea) {
+            if (/^(commander|companion|mainboard|sideboard|side board|maybeboard|tokens?)[:\s]*$/i.test(linea)) {
+                omitidas++;
+                return;
+            }
+            const m = patron.exec(linea);
+            if (!m || !m[2]) {
+                omitidas++;
+                return;
+            }
+            filas.push({
+                cantidad: Number(m[1]),
+                nombre: m[2].trim(),
+                setCodigo: (m[3] || '').trim(),
+                setNombre: '',
+                numero: (m[4] || '').trim(),
+                scryfallId: '',
+                foil: false,
+                card: null,
+                sinResolver: false
+            });
+        });
+        filas.omitidasLineas = omitidas;
+        if (filas.length === 0) return null;
         return filas;
     }
 
@@ -702,7 +733,7 @@
         mensajeLista.textContent = '';
         const filas = analizarLista(texto);
         if (!filas) {
-            mensajeLista.textContent = 'No se reconocio un CSV valido. Tiene que tener columnas Name y Quantity/Count (export de Manabox o Moxfield).';
+            mensajeLista.textContent = 'No se reconocio la lista. Pega un CSV de Manabox/Moxfield (columnas Name y Quantity/Count) o un texto como "1 Sol Ring (CLB) 269".';
             mensajeLista.style.color = '#dc2626';
             return;
         }
@@ -725,6 +756,10 @@
             progresoLista.hidden = true;
             pintarRevision();
             zonaRevision.hidden = false;
+            if (filas.omitidasLineas > 0) {
+                mensajeLista.textContent = filas.omitidasLineas + ' linea(s) no reconocida(s) se omitieron.';
+                mensajeLista.style.color = '#555555';
+            }
         } catch (error) {
             mensajeLista.textContent = 'Error al resolver las cartas: ' + error.message;
             mensajeLista.style.color = '#dc2626';
