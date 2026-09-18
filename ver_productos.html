@@ -199,38 +199,39 @@
 
     function crearCarta(p) {
         const carta = document.createElement('div');
-        carta.className = 'carta';
+        carta.className = 'carta carta-reciente';
         carta.setAttribute('role', 'button');
         carta.tabIndex = 0;
 
-        const tipo = document.createElement('div');
-        tipo.className = 'carta-tipo';
-        tipo.textContent = 'Cartas de MTG';
-
-        const nombre = document.createElement('div');
-        nombre.className = 'carta-nombre';
-        nombre.textContent = p.nombre;
-
-        const imagen = document.createElement('div');
-        imagen.className = 'carta-imagen';
+        const marco = document.createElement('div');
+        marco.className = 'carta-marco';
         if (p.imagen) {
             const img = document.createElement('img');
             img.src = p.imagen;
             img.alt = p.nombre;
-            imagen.appendChild(img);
+            img.loading = 'lazy';
+            marco.appendChild(img);
         } else {
-            imagen.textContent = 'MTG';
+            const placeholder = document.createElement('span');
+            placeholder.textContent = 'MTG';
+            marco.appendChild(placeholder);
         }
 
-        const descripcion = document.createElement('div');
-        descripcion.className = 'carta-descripcion';
-        descripcion.textContent = p.descripcion;
+        const nombre = document.createElement('div');
+        nombre.className = 'carta-nombre';
+        nombre.textContent = p.nombre;
 
         const stock = badgeStock(p);
 
         const precio = document.createElement('div');
         precio.className = 'carta-precio';
         precio.textContent = formatearPrecio(p.precio);
+
+        const info = document.createElement('div');
+        info.className = 'carta-info';
+        info.appendChild(nombre);
+        info.appendChild(stock);
+        info.appendChild(precio);
 
         const botonAgregar = document.createElement('button');
         botonAgregar.type = 'button';
@@ -241,12 +242,8 @@
             agregarAlCarrito(p);
         };
 
-        carta.appendChild(tipo);
-        carta.appendChild(nombre);
-        carta.appendChild(imagen);
-        carta.appendChild(descripcion);
-        carta.appendChild(stock);
-        carta.appendChild(precio);
+        carta.appendChild(marco);
+        carta.appendChild(info);
         carta.appendChild(botonAgregar);
 
         carta.addEventListener('click', function () {
