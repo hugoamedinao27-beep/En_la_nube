@@ -4,22 +4,21 @@
 import emailjs from 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/+esm';
 
 const EMAILJS = {
-    publicKey: '',
-    serviceId: '',
-    templateId: ''
+    publicKey: 'N7_d6eK0DvISDrmxr',
+    serviceId: 'service_4gxjudq',
+    templateId: 'template_ym3oh7e'
 };
 
-// Texto que aparece en el correo cuando el pedido queda listo para retiro.
-const MENSAJE_RETIRO = 'Su pedido ya está en el lugar acordado. Nos vemos en una próxima aventura.';
-
+// Mensajes por evento. Asunto y cuerpo van en el correo (la plantilla de
+// EmailJS usa {{asunto}}, {{mensaje}}, {{detalle}}, {{total}} y {{pedidoId}}).
 const ASUNTOS = {
     listo_para_despacho: 'Tu pedido ya está listo, Hechicero',
-    entregado: '¡Gracias por tu compra!'
+    entregado: '¡Tu pedido ha sido entregado!'
 };
 
 const MENSAJES = {
-    listo_para_despacho: MENSAJE_RETIRO,
-    entregado: 'Registramos la entrega de tu pedido. ¡Gracias por jugar con nosotros!'
+    listo_para_despacho: 'Tu pedido ya está listo para retiro en el lugar acordado. Nos vemos en una próxima aventura.',
+    entregado: 'Tu pedido ha sido entregado en el lugar acordado. Nos vemos en una próxima aventura y recuerda: un hechicero nunca llega tarde, llega cuando se le necesita.'
 };
 
 function formatearPrecio(precio) {
@@ -74,6 +73,7 @@ async function enviarAvisoPedido(pedido, evento) {
     const asunto = ASUNTOS[evento] || 'Aviso de tu pedido';
     const params = {
         to_email: destinatario,
+        name: 'Hechicero',
         cliente: destinatario,
         asunto: asunto,
         titulo: asunto,
