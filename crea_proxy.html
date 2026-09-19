@@ -160,7 +160,7 @@
 </div>
 
 <script type="module">
-    import { auth, onAuthStateChanged, db, collection, addDoc, updateDoc, doc, query, orderBy, where, onSnapshot, arrayUnion, serverTimestamp } from './firebaseConfig.js';
+    import { auth, onAuthStateChanged, db, collection, addDoc, updateDoc, doc, query, where, onSnapshot, arrayUnion, serverTimestamp } from './firebaseConfig.js';
 
     const bloqueInvitado = document.getElementById('bloqueInvitado');
     const bloqueLogueado = document.getElementById('bloqueLogueado');
@@ -214,22 +214,34 @@
 
     function suscribirProxies() {
         onSnapshot(
-            query(collection(db, 'proxies'), where('usuarioId', '==', usuario.uid), orderBy('fecha', 'desc')),
+            query(collection(db, 'proxies'), where('usuarioId', '==', usuario.uid)),
             function (snapshot) {
                 proxyError.style.display = 'none';
                 const contenedor = listaProxies;
                 contenedor.innerHTML = '';
-                if (snapshot.empty) {
+
+                const docs = [];
+                snapshot.forEach(function (docSnap) {
+                    docs.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                docs.sort(function (a, b) {
+                    const fa = (a.fecha && typeof a.fecha.toMillis === 'function') ? a.fecha.toMillis() : 0;
+                    const fb = (b.fecha && typeof b.fecha.toMillis === 'function') ? b.fecha.toMillis() : 0;
+                    return fb - fa;
+                });
+
+                if (docs.length === 0) {
                     proxyVacio.style.display = 'block';
                     return;
                 }
                 proxyVacio.style.display = 'none';
-                snapshot.forEach(function (docSnap) {
-                    contenedor.appendChild(crearItem(docSnap.id, docSnap.data()));
+                docs.forEach(function (p) {
+                    contenedor.appendChild(crearItem(p.id, p));
                 });
             },
-            function () {
+            function (error) {
                 proxyError.style.display = 'block';
+                proxyError.textContent = 'No se pudieron cargar tus solicitudes: ' + (error.message || error);
                 proxyVacio.style.display = 'none';
             }
         );
