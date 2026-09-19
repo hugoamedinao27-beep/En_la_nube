@@ -310,7 +310,7 @@
             presupuesto: Number(valor('presupuesto')) || null,
             notas: valor('notas'),
             estado: 'pendiente',
-            mensajes: [{ de: 'cliente', texto: partes.join('\n'), fecha: serverTimestamp() }],
+            mensajes: [{ de: 'cliente', texto: partes.join('\n'), fecha: new Date() }],
             fecha: serverTimestamp(),
             actualizado: serverTimestamp()
         };
@@ -415,7 +415,7 @@
         if (!texto || !proxyActual) return;
         input.value = '';
         updateDoc(doc(db, 'proxies', proxyActual.id), {
-            mensajes: arrayUnion({ de: 'cliente', texto: texto, fecha: serverTimestamp() })
+            mensajes: arrayUnion({ de: 'cliente', texto: texto, fecha: new Date() })
         }).catch(function () {
             input.value = texto;
             alert('No se pudo enviar el mensaje. Intentá de nuevo.');

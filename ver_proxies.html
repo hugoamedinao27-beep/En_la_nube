@@ -280,7 +280,7 @@
         if (!texto || !proxyActual) return;
         input.value = '';
         updateDoc(doc(db, 'proxies', proxyActual.id), {
-            mensajes: arrayUnion({ de: 'admin', texto: texto, fecha: serverTimestamp() })
+            mensajes: arrayUnion({ de: 'admin', texto: texto, fecha: new Date() })
         }).catch(function () {
             input.value = texto;
             alert('No se pudo enviar el mensaje. Intentá de nuevo.');
