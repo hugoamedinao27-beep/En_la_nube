@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crea tu proxie - Cartón Pintado</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="pagina-proxies">
+
+<header class="mini-hero">
+    <a href="index.html" class="mini-hero-marca">
+        <img src="Imagenes/logo-carton-pintado.jpeg" alt="Logo Cartón Pintado" class="mini-hero-logo">
+        <span>Cartón Pintado</span>
+    </a>
+</header>
+
+<div class="card card-lista">
+
+    <h1>Crea tu proxie</h1>
+    <h2>Proxies personalizados de MTG y TCG</h2>
+    <p>
+        Un proxie es una carta personalizada: puede imitar una carta real, usar arte alternativo
+        o ser una carta totalmente inventada para tu commander. Contanos tu idea en el formulario
+        y coordiná todos los detalles conversando con el admin de la tienda.
+    </p>
+
+    <section class="seccion-proxy">
+        <h2 class="detalle-pedido-subtitulo">Cómo funciona</h2>
+        <div class="pasos-grid">
+            <div class="paso">
+                <span class="paso-numero">1</span>
+                <p><strong>Contá tu idea</strong><br>Completá el formulario con la carta que querés armar.</p>
+            </div>
+            <div class="paso">
+                <span class="paso-numero">2</span>
+                <p><strong>Conversá con el admin</strong><br>Coordiná arte, texto y precio en el chat de la solicitud.</p>
+            </div>
+            <div class="paso">
+                <span class="paso-numero">3</span>
+                <p><strong>Lo armamos</strong><br>Imprimimos y construimos tu proxie.</p>
+            </div>
+            <div class="paso">
+                <span class="paso-numero">4</span>
+                <p><strong>Retirás</strong><br>Acordamos la entrega y lo disfrutás.</p>
+            </div>
+        </div>
+    </section>
+
+    <div id="bloqueInvitado" style="display:none;">
+        <section class="seccion-proxy">
+            <h2 class="detalle-pedido-subtitulo">Necesitás una cuenta</h2>
+            <p>
+                Para pedir un proxie y conversar con el admin necesitás iniciar sesión.
+                Si todavía no tenés cuenta, creala gratis.
+            </p>
+            <div class="botones">
+                <a href="login.html?destino=crea_proxy.html" class="btn btn-ver">Iniciar Sesión</a>
+                <a href="registro.html" class="btn btn-registrar">Crear cuenta</a>
+            </div>
+        </section>
+    </div>
+
+    <div id="bloqueLogueado" style="display:none;">
+
+        <section class="seccion-proxy">
+            <h2 class="detalle-pedido-subtitulo">Solicitar un proxie</h2>
+            <form id="formProxy" class="form">
+                <div class="grid-campos">
+                    <label class="campo">
+                        <span>Nombre de la carta *</span>
+                        <input type="text" id="nombreCarta" placeholder="p. ej. Black Lotus" required>
+                    </label>
+                    <label class="campo">
+                        <span>Expansión / marco</span>
+                        <select id="expansion" class="campo-select">
+                            <option value="MTG estándar">MTG estándar</option>
+                            <option value="MTG full art">MTG full art</option>
+                            <option value="MTG borderless">MTG borderless</option>
+                            <option value="Diseño libre">Diseño libre</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </label>
+                    <label class="campo">
+                        <span>Tipo de carta</span>
+                        <select id="tipo" class="campo-select">
+                            <option value="Criatura">Criatura</option>
+                            <option value="Conjuro">Conjuro</option>
+                            <option value="Instantáneo">Instantáneo</option>
+                            <option value="Encantamiento">Encantamiento</option>
+                            <option value="Artefacto">Artefacto</option>
+                            <option value="Planeswalker">Planeswalker</option>
+                            <option value="Tierra">Tierra</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </label>
+                    <label class="campo">
+                        <span>Tamaño</span>
+                        <select id="tamano" class="campo-select">
+                            <option value="Estándar MTG">Estándar MTG</option>
+                            <option value="Jumbo">Jumbo</option>
+                            <option value="Mini">Mini</option>
+                        </select>
+                    </label>
+                    <label class="campo">
+                        <span>Cantidad</span>
+                        <input type="number" id="cantidad" min="1" value="1">
+                    </label>
+                    <label class="campo">
+                        <span>Colores preferidos</span>
+                        <input type="text" id="colores" placeholder="p. ej. Azul y blanco">
+                    </label>
+                </div>
+
+                <label class="campo">
+                    <span>Arte / descripción de la imagen</span>
+                    <textarea id="arte" placeholder="Describí qué imagen querés en la carta (personaje, escena, estilo...)."></textarea>
+                </label>
+
+                <label class="campo">
+                    <span>Texto de la carta (reglas)</span>
+                    <textarea id="textoCarta" placeholder="Escribí el texto de reglas o de ambientación que querés que tenga."></textarea>
+                </label>
+
+                <div class="grid-campos">
+                    <label class="campo">
+                        <span>Presupuesto estimado ($)</span>
+                        <input type="number" id="presupuesto" min="0" placeholder="Opcional">
+                    </label>
+                </div>
+
+                <label class="campo">
+                    <span>Notas extra</span>
+                    <textarea id="notas" placeholder="Cualquier otro detalle: fecha límite, lugar de retiro, etc."></textarea>
+                </label>
+
+                <button type="submit" class="btn btn-pedir">Enviar solicitud</button>
+            </form>
+            <p id="avisoForm" class="mensaje"></p>
+        </section>
+
+        <section class="seccion-proxy">
+            <h2 class="detalle-pedido-subtitulo">Mis solicitudes</h2>
+            <div id="listaProxies" class="proxies"></div>
+            <p id="proxyVacio" class="mensaje" style="display:none;">Todavía no pediste ningún proxie. ¡Animáte con el formulario de arriba!</p>
+            <p id="proxyError" class="mensaje" style="display:none;">No se pudieron cargar tus solicitudes.</p>
+        </section>
+
+    </div>
+
+    <a href="index.html" class="btn btn-volver">Volver al inicio</a>
+</div>
+
+<div id="modalChat" class="modal-overlay">
+    <div class="modal-contenido modal-chat">
+        <button type="button" id="cerrarChat" class="btn-cerrar" title="Cerrar">&times;</button>
+        <div id="chatCabecera" class="chat-cabecera"></div>
+        <div id="chatMensajes" class="chat-mensajes"></div>
+        <div class="chat-pie">
+            <input type="text" id="chatTexto" class="campo-busqueda chat-input" placeholder="Escribí tu mensaje..." maxlength="1000">
+            <button type="button" id="btnEnviar" class="btn btn-ver">Enviar</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { auth, onAuthStateChanged, db, collection, addDoc, updateDoc, doc, query, orderBy, where, onSnapshot, arrayUnion, serverTimestamp } from './firebaseConfig.js';
+
+    const bloqueInvitado = document.getElementById('bloqueInvitado');
+    const bloqueLogueado = document.getElementById('bloqueLogueado');
+    const formProxy = document.getElementById('formProxy');
+    const avisoForm = document.getElementById('avisoForm');
+    const listaProxies = document.getElementById('listaProxies');
+    const proxyVacio = document.getElementById('proxyVacio');
+    const proxyError = document.getElementById('proxyError');
+
+    let usuario = null;
+    let proxyActual = null;
+    let suscripcionChat = null;
+
+    const ETIQUETAS_ESTADO = {
+        pendiente: 'Pendiente',
+        en_proceso: 'En proceso',
+        listo: 'Listo',
+        entregado: 'Entregado',
+        cancelado: 'Cancelado'
+    };
+
+    function formatearFecha(fecha) {
+        if (!fecha) return '-';
+        if (typeof fecha.toDate === 'function') {
+            return fecha.toDate().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+        }
+        return String(fecha);
+    }
+
+    function etiquetaEstado(estado) {
+        const clave = estado || 'pendiente';
+        return ETIQUETAS_ESTADO[clave] || clave;
+    }
+
+    function valor(id) {
+        return document.getElementById(id).value.trim();
+    }
+
+    onAuthStateChanged(auth, function (user) {
+        if (user && !user.isAnonymous) {
+            usuario = user;
+            bloqueInvitado.style.display = 'none';
+            bloqueLogueado.style.display = 'block';
+            suscribirProxies();
+        } else {
+            usuario = null;
+            bloqueInvitado.style.display = 'block';
+            bloqueLogueado.style.display = 'none';
+        }
+    });
+
+    function suscribirProxies() {
+        onSnapshot(
+            query(collection(db, 'proxies'), where('usuarioId', '==', usuario.uid), orderBy('fecha', 'desc')),
+            function (snapshot) {
+                proxyError.style.display = 'none';
+                const contenedor = listaProxies;
+                contenedor.innerHTML = '';
+                if (snapshot.empty) {
+                    proxyVacio.style.display = 'block';
+                    return;
+                }
+                proxyVacio.style.display = 'none';
+                snapshot.forEach(function (docSnap) {
+                    contenedor.appendChild(crearItem(docSnap.id, docSnap.data()));
+                });
+            },
+            function () {
+                proxyError.style.display = 'block';
+                proxyVacio.style.display = 'none';
+            }
+        );
+    }
+
+    function crearItem(id, p) {
+        const item = document.createElement('div');
+        item.className = 'proxy';
+
+        const info = document.createElement('div');
+        info.className = 'proxy-info';
+
+        const nombre = document.createElement('div');
+        nombre.className = 'proxy-nombre';
+        nombre.textContent = p.nombreCarta || 'Proxie';
+
+        const detalle = document.createElement('div');
+        detalle.className = 'proxy-detalle';
+        detalle.textContent = (p.cantidad || 1) + ' x · ' + (p.tamano || 'Estándar MTG') + (p.expansion ? ' · ' + p.expansion : '');
+
+        const fecha = document.createElement('div');
+        fecha.className = 'proxy-fecha';
+        fecha.textContent = 'Solicitado: ' + formatearFecha(p.fecha);
+
+        info.appendChild(nombre);
+        info.appendChild(detalle);
+        info.appendChild(fecha);
+
+        const estado = document.createElement('div');
+        estado.className = 'proxy-estado pedido-estado estado-' + (p.estado || 'pendiente');
+        estado.textContent = etiquetaEstado(p.estado);
+
+        const acciones = document.createElement('div');
+        acciones.className = 'pedido-acciones';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-accion btn-pedir';
+        btn.textContent = 'Abrir conversación';
+        btn.onclick = function () { abrirChat(id); };
+
+        acciones.appendChild(btn);
+        item.appendChild(info);
+        item.appendChild(estado);
+        item.appendChild(acciones);
+
+        return item;
+    }
+
+    formProxy.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        avisoForm.textContent = '';
+        avisoForm.style.color = '';
+
+        const botonEnviar = formProxy.querySelector('button[type="submit"]');
+        botonEnviar.disabled = true;
+        botonEnviar.textContent = 'Enviando...';
+
+        const nombreCarta = valor('nombreCarta');
+        const partes = ['¡Hola! Quiero pedir un proxie de "' + nombreCarta + '".'];
+        if (valor('arte')) partes.push('Arte: ' + valor('arte'));
+        if (valor('textoCarta')) partes.push('Texto: ' + valor('textoCarta'));
+        if (valor('colores')) partes.push('Colores: ' + valor('colores'));
+        if (valor('notas')) partes.push('Notas: ' + valor('notas'));
+
+        const datosProxy = {
+            usuarioId: usuario.uid,
+            usuarioEmail: usuario.email,
+            nombreCarta: nombreCarta,
+            expansion: valor('expansion'),
+            tipo: valor('tipo'),
+            tamano: valor('tamano'),
+            cantidad: Number(valor('cantidad')) || 1,
+            colores: valor('colores'),
+            arte: valor('arte'),
+            textoCarta: valor('textoCarta'),
+            presupuesto: Number(valor('presupuesto')) || null,
+            notas: valor('notas'),
+            estado: 'pendiente',
+            mensajes: [{ de: 'cliente', texto: partes.join('\n'), fecha: serverTimestamp() }],
+            fecha: serverTimestamp(),
+            actualizado: serverTimestamp()
+        };
+
+        try {
+            await addDoc(collection(db, 'proxies'), datosProxy);
+            formProxy.reset();
+            document.getElementById('cantidad').value = '1';
+            avisoForm.textContent = '¡Solicitud enviada! El admin te va a responder en la conversación.';
+            avisoForm.style.color = '#15803d';
+        } catch (error) {
+            avisoForm.textContent = 'No se pudo enviar la solicitud: ' + error.message;
+            avisoForm.style.color = '#dc2626';
+        } finally {
+            botonEnviar.disabled = false;
+            botonEnviar.textContent = 'Enviar solicitud';
+        }
+    });
+
+    // ── Conversación ──
+    function abrirChat(id) {
+        if (suscripcionChat) suscripcionChat();
+        suscripcionChat = onSnapshot(doc(db, 'proxies', id), function (snap) {
+            if (!snap.exists) {
+                cerrarChat();
+                return;
+            }
+            proxyActual = { id: snap.id, ...snap.data() };
+            pintarChat();
+        });
+        document.getElementById('modalChat').style.display = 'flex';
+        document.getElementById('chatMensajes').innerHTML = '';
+        document.getElementById('chatTexto').focus();
+    }
+
+    function pintarChat() {
+        const p = proxyActual;
+        if (!p) return;
+
+        const cabecera = document.getElementById('chatCabecera');
+        cabecera.innerHTML = '';
+
+        const titulo = document.createElement('div');
+        const nombre = document.createElement('div');
+        nombre.className = 'proxy-nombre';
+        nombre.textContent = p.nombreCarta + '  (' + (p.cantidad || 1) + ' x ' + (p.tamano || 'Estándar MTG') + ')';
+        const sub = document.createElement('div');
+        sub.className = 'proxy-detalle';
+        sub.textContent = 'Solicitado el ' + formatearFecha(p.fecha);
+        titulo.appendChild(nombre);
+        titulo.appendChild(sub);
+
+        const estado = document.createElement('span');
+        estado.className = 'proxy-estado pedido-estado estado-' + (p.estado || 'pendiente');
+        estado.textContent = etiquetaEstado(p.estado);
+
+        cabecera.appendChild(titulo);
+        cabecera.appendChild(estado);
+
+        const contenedor = document.getElementById('chatMensajes');
+        contenedor.innerHTML = '';
+        (Array.isArray(p.mensajes) ? p.mensajes : []).forEach(function (m) {
+            contenedor.appendChild(crearBurbuja(m));
+        });
+        contenedor.scrollTop = contenedor.scrollHeight;
+    }
+
+    function crearBurbuja(m) {
+        const esAdmin = m.de === 'admin';
+        const burbuja = document.createElement('div');
+        burbuja.className = 'chat-burbuja ' + (esAdmin ? 'chat-admin' : 'chat-cliente');
+
+        const autor = document.createElement('div');
+        autor.className = 'chat-autor';
+        autor.textContent = esAdmin ? 'Admin' : 'Vos';
+
+        const texto = document.createElement('div');
+        texto.textContent = m.texto;
+
+        const hora = document.createElement('div');
+        hora.className = 'chat-hora';
+        hora.textContent = formatearFecha(m.fecha);
+
+        burbuja.appendChild(autor);
+        burbuja.appendChild(texto);
+        burbuja.appendChild(hora);
+        return burbuja;
+    }
+
+    function cerrarChat() {
+        document.getElementById('modalChat').style.display = 'none';
+        if (suscripcionChat) {
+            suscripcionChat();
+            suscripcionChat = null;
+        }
+        proxyActual = null;
+    }
+
+    function enviarMensaje() {
+        const input = document.getElementById('chatTexto');
+        const texto = input.value.trim();
+        if (!texto || !proxyActual) return;
+        input.value = '';
+        updateDoc(doc(db, 'proxies', proxyActual.id), {
+            mensajes: arrayUnion({ de: 'cliente', texto: texto, fecha: serverTimestamp() })
+        }).catch(function () {
+            input.value = texto;
+            alert('No se pudo enviar el mensaje. Intentá de nuevo.');
+        });
+    }
+
+    document.getElementById('cerrarChat').addEventListener('click', cerrarChat);
+    document.getElementById('modalChat').addEventListener('click', function (e) {
+        if (e.target === this) cerrarChat();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') cerrarChat();
+    });
+    document.getElementById('btnEnviar').addEventListener('click', enviarMensaje);
+    document.getElementById('chatTexto').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') enviarMensaje();
+    });
+</script>
+
+</body>
+</html>

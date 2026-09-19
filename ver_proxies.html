@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proxies solicitados - Cartón Pintado</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="pagina-proxies">
+
+<header class="mini-hero">
+    <a href="index.html" class="mini-hero-marca">
+        <img src="Imagenes/logo-carton-pintado.jpeg" alt="Logo Cartón Pintado" class="mini-hero-logo">
+        <span>Cartón Pintado</span>
+    </a>
+</header>
+
+<div class="card card-lista">
+    <h1>Proxies solicitados</h1>
+    <h2>Solicitudes de proxies de los clientes</h2>
+    <p>Conversá con cada cliente para coordinar el arte, el texto y el precio de cada proxie, y actualizá el estado cuando avance el trabajo.</p>
+
+    <div class="filtros filtros-precio">
+        <label class="campo">
+            <span>Filtrar por estado</span>
+            <select id="filtroEstado" class="campo-select">
+                <option value="todos">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="en_proceso">En proceso</option>
+                <option value="listo">Listo</option>
+                <option value="entregado">Entregado</option>
+                <option value="cancelado">Cancelado</option>
+            </select>
+        </label>
+    </div>
+
+    <div id="listaProxies" class="proxies"></div>
+
+    <p id="vacio" class="mensaje" style="display:none;">No hay solicitudes de proxies todavía.</p>
+    <p id="error" class="mensaje" style="display:none;">No se pudieron cargar las solicitudes.</p>
+
+    <a href="index.html" class="btn btn-volver">Volver al inicio</a>
+</div>
+
+<div id="modalChat" class="modal-overlay">
+    <div class="modal-contenido modal-chat">
+        <button type="button" id="cerrarChat" class="btn-cerrar" title="Cerrar">&times;</button>
+        <div id="chatCabecera" class="chat-cabecera"></div>
+        <div class="chat-estado-admin">
+            <label class="campo">
+                <span>Estado de la solicitud</span>
+                <select id="selectEstado" class="campo-select">
+                    <option value="pendiente">Pendiente</option>
+                    <option value="en_proceso">En proceso</option>
+                    <option value="listo">Listo</option>
+                    <option value="entregado">Entregado</option>
+                    <option value="cancelado">Cancelado</option>
+                </select>
+            </label>
+        </div>
+        <div id="chatMensajes" class="chat-mensajes"></div>
+        <div class="chat-pie">
+            <input type="text" id="chatTexto" class="campo-busqueda chat-input" placeholder="Respondé al cliente..." maxlength="1000">
+            <button type="button" id="btnEnviar" class="btn btn-ver">Responder</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { db, collection, updateDoc, doc, query, orderBy, onSnapshot, arrayUnion, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
+
+    const filtroEstado = document.getElementById('filtroEstado');
+    const listaProxies = document.getElementById('listaProxies');
+    const vacio = document.getElementById('vacio');
+    const error = document.getElementById('error');
+
+    let proxiesCache = [];
+    let proxyActual = null;
+    let suscripcionChat = null;
+
+    const ETIQUETAS_ESTADO = {
+        pendiente: 'Pendiente',
+        en_proceso: 'En proceso',
+        listo: 'Listo',
+        entregado: 'Entregado',
+        cancelado: 'Cancelado'
+    };
+
+    function formatearFecha(fecha) {
+        if (!fecha) return '-';
+        if (typeof fecha.toDate === 'function') {
+            return fecha.toDate().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+        }
+        return String(fecha);
+    }
+
+    function etiquetaEstado(estado) {
+        const clave = estado || 'pendiente';
+        return ETIQUETAS_ESTADO[clave] || clave;
+    }
+
+    obtenerEsAdmin().then(function (admin) {
+        if (!admin) {
+            location.href = 'index.html';
+            return;
+        }
+        suscribirProxies();
+    });
+
+    function suscribirProxies() {
+        onSnapshot(
+            query(collection(db, 'proxies'), orderBy('fecha', 'desc')),
+            function (snapshot) {
+                proxiesCache = [];
+                error.style.display = 'none';
+                snapshot.forEach(function (docSnap) {
+                    proxiesCache.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                pintarLista();
+            },
+            function () {
+                error.style.display = 'block';
+                vacio.style.display = 'none';
+            }
+        );
+    }
+
+    function pintarLista() {
+        const contenedor = listaProxies;
+        contenedor.innerHTML = '';
+        error.style.display = 'none';
+
+        const estadoFiltro = filtroEstado.value;
+        const visibles = estadoFiltro === 'todos'
+            ? proxiesCache
+            : proxiesCache.filter(function (p) { return (p.estado || 'pendiente') === estadoFiltro; });
+
+        if (visibles.length === 0) {
+            vacio.style.display = 'block';
+            return;
+        }
+        vacio.style.display = 'none';
+        visibles.forEach(function (p) {
+            contenedor.appendChild(crearItem(p.id, p));
+        });
+    }
+
+    filtroEstado.addEventListener('change', pintarLista);
+
+    function crearItem(id, p) {
+        const item = document.createElement('div');
+        item.className = 'proxy';
+
+        const info = document.createElement('div');
+        info.className = 'proxy-info';
+
+        const nombre = document.createElement('div');
+        nombre.className = 'proxy-nombre';
+        nombre.textContent = p.nombreCarta || 'Proxie';
+
+        const detalle = document.createElement('div');
+        detalle.className = 'proxy-detalle';
+        detalle.textContent = 'Cliente: ' + (p.usuarioEmail || 'Cliente') + ' · ' + (p.cantidad || 1) + ' x ' + (p.tamano || 'Estándar MTG') + (p.expansion ? ' · ' + p.expansion : '');
+
+        const fecha = document.createElement('div');
+        fecha.className = 'proxy-fecha';
+        fecha.textContent = 'Solicitado: ' + formatearFecha(p.fecha);
+
+        info.appendChild(nombre);
+        info.appendChild(detalle);
+        info.appendChild(fecha);
+
+        const estado = document.createElement('div');
+        estado.className = 'proxy-estado pedido-estado estado-' + (p.estado || 'pendiente');
+        estado.textContent = etiquetaEstado(p.estado);
+
+        const acciones = document.createElement('div');
+        acciones.className = 'pedido-acciones';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-accion btn-editar';
+        btn.textContent = 'Abrir conversación';
+        btn.onclick = function () { abrirChat(id); };
+
+        acciones.appendChild(btn);
+        item.appendChild(info);
+        item.appendChild(estado);
+        item.appendChild(acciones);
+
+        return item;
+    }
+
+    // ── Conversación ──
+    function abrirChat(id) {
+        if (suscripcionChat) suscripcionChat();
+        suscripcionChat = onSnapshot(doc(db, 'proxies', id), function (snap) {
+            if (!snap.exists) {
+                cerrarChat();
+                return;
+            }
+            proxyActual = { id: snap.id, ...snap.data() };
+            pintarChat();
+        });
+        document.getElementById('modalChat').style.display = 'flex';
+        document.getElementById('chatMensajes').innerHTML = '';
+        document.getElementById('chatTexto').focus();
+    }
+
+    function pintarChat() {
+        const p = proxyActual;
+        if (!p) return;
+
+        const cabecera = document.getElementById('chatCabecera');
+        cabecera.innerHTML = '';
+
+        const titulo = document.createElement('div');
+        const nombre = document.createElement('div');
+        nombre.className = 'proxy-nombre';
+        nombre.textContent = p.nombreCarta || 'Proxie';
+
+        const sub = document.createElement('div');
+        sub.className = 'proxy-detalle';
+        sub.textContent = (p.usuarioEmail || 'Cliente') + ' · solicitado el ' + formatearFecha(p.fecha);
+        titulo.appendChild(nombre);
+        titulo.appendChild(sub);
+
+        const estado = document.createElement('span');
+        estado.className = 'proxy-estado pedido-estado estado-' + (p.estado || 'pendiente');
+        estado.textContent = etiquetaEstado(p.estado);
+
+        cabecera.appendChild(titulo);
+        cabecera.appendChild(estado);
+
+        const select = document.getElementById('selectEstado');
+        select.value = p.estado || 'pendiente';
+
+        const contenedor = document.getElementById('chatMensajes');
+        contenedor.innerHTML = '';
+        (Array.isArray(p.mensajes) ? p.mensajes : []).forEach(function (m) {
+            contenedor.appendChild(crearBurbuja(m));
+        });
+        contenedor.scrollTop = contenedor.scrollHeight;
+    }
+
+    function crearBurbuja(m) {
+        const esAdmin = m.de === 'admin';
+        const burbuja = document.createElement('div');
+        burbuja.className = 'chat-burbuja ' + (esAdmin ? 'chat-admin' : 'chat-cliente');
+
+        const autor = document.createElement('div');
+        autor.className = 'chat-autor';
+        autor.textContent = esAdmin ? 'Vos (Admin)' : (proxyActual && proxyActual.usuarioEmail ? proxyActual.usuarioEmail : 'Cliente');
+
+        const texto = document.createElement('div');
+        texto.textContent = m.texto;
+
+        const hora = document.createElement('div');
+        hora.className = 'chat-hora';
+        hora.textContent = formatearFecha(m.fecha);
+
+        burbuja.appendChild(autor);
+        burbuja.appendChild(texto);
+        burbuja.appendChild(hora);
+        return burbuja;
+    }
+
+    function cerrarChat() {
+        document.getElementById('modalChat').style.display = 'none';
+        if (suscripcionChat) {
+            suscripcionChat();
+            suscripcionChat = null;
+        }
+        proxyActual = null;
+    }
+
+    function enviarMensaje() {
+        const input = document.getElementById('chatTexto');
+        const texto = input.value.trim();
+        if (!texto || !proxyActual) return;
+        input.value = '';
+        updateDoc(doc(db, 'proxies', proxyActual.id), {
+            mensajes: arrayUnion({ de: 'admin', texto: texto, fecha: serverTimestamp() })
+        }).catch(function () {
+            input.value = texto;
+            alert('No se pudo enviar el mensaje. Intentá de nuevo.');
+        });
+    }
+
+    document.getElementById('selectEstado').addEventListener('change', function () {
+        const estado = this.value;
+        if (!proxyActual || (proxyActual.estado || 'pendiente') === estado) return;
+        updateDoc(doc(db, 'proxies', proxyActual.id), {
+            estado: estado,
+            actualizado: serverTimestamp()
+        }).catch(function (error) {
+            alert('Error al actualizar el estado: ' + error.message);
+        });
+    });
+
+    document.getElementById('cerrarChat').addEventListener('click', cerrarChat);
+    document.getElementById('modalChat').addEventListener('click', function (e) {
+        if (e.target === this) cerrarChat();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') cerrarChat();
+    });
+    document.getElementById('btnEnviar').addEventListener('click', enviarMensaje);
+    document.getElementById('chatTexto').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') enviarMensaje();
+    });
+</script>
+
+</body>
+</html>

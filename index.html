@@ -18,15 +18,18 @@
         </p>
         <div class="botones botones-hero" id="botonesInvitado">
             <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
+            <a href="crea_proxy.html" class="btn btn-pedir">Crea tu proxie</a>
             <a href="login.html" class="btn btn-login">Iniciar Sesión</a>
             <a href="registro.html" class="btn btn-registrar">Crear cuenta</a>
         </div>
         <div class="botones botones-hero" id="botonesRegistrado" style="display: none;">
             <p id="usuarioSesion" class="usuario-sesion"></p>
             <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
+            <a href="crea_proxy.html" class="btn btn-pedir">Crea tu proxie</a>
             <a href="registrar_producto.html" class="btn btn-registrar" id="linkRegistrarProducto" style="display: none;">Registrar Producto</a>
             <a href="ver_pedidos.html" class="btn btn-login" id="linkVerPedidos" style="display: none;">Ver Pedidos</a>
             <a href="pedidos_pendientes.html" class="btn btn-registrar" id="linkPedidosPendientes" style="display: none;">Pedidos Pendientes</a>
+            <a href="ver_proxies.html" class="btn btn-login" id="linkVerProxies" style="display: none;">Ver Proxies</a>
             <button type="button" id="btnCerrarSesion" class="btn btn-login">Cerrar Sesión</button>
         </div>
     </div>
@@ -58,6 +61,7 @@
     const linkRegistrarProducto = document.getElementById('linkRegistrarProducto');
     const linkVerPedidos = document.getElementById('linkVerPedidos');
     const linkPedidosPendientes = document.getElementById('linkPedidosPendientes');
+    const linkVerProxies = document.getElementById('linkVerProxies');
 
     onAuthStateChanged(auth, function (user) {
         if (user && !user.isAnonymous) {
@@ -69,6 +73,7 @@
                 linkRegistrarProducto.style.display = admin ? '' : 'none';
                 linkVerPedidos.style.display = admin ? '' : 'none';
                 linkPedidosPendientes.style.display = admin ? '' : 'none';
+                linkVerProxies.style.display = admin ? '' : 'none';
             });
         } else {
             botonesInvitado.style.display = 'flex';

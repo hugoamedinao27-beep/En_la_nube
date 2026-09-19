@@ -1516,3 +1516,239 @@ body.pagina-productos {
     border-color: #1e3a5f;
     box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.15);
 }
+
+/* ── Crea tu proxie ── */
+body.pagina-proxies {
+    display: block;
+    padding: 0 0 40px;
+    background: linear-gradient(160deg, #f6f3ec 0%, #e8eefa 100%);
+}
+
+.pagina-proxies .card-lista {
+    margin-top: 32px;
+    max-width: 860px;
+}
+
+.campo select {
+    font-family: inherit;
+    font-size: 14px;
+    padding: 8px 10px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    outline: none;
+    background: #ffffff;
+    color: #333333;
+    box-sizing: border-box;
+}
+
+.campo select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px #2563eb;
+}
+
+.seccion-proxy {
+    border-top: 1px dashed #c3b28e;
+    padding-top: 20px;
+    margin-top: 26px;
+}
+
+.pasos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 0 0 22px;
+}
+
+.paso {
+    background: #ffffff;
+    border: 1px solid #e3e6ef;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(16, 34, 77, 0.06);
+}
+
+.paso-numero {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(150deg, #10224d 0%, #1e3a8a 100%);
+    color: #f0d98b;
+    font-weight: 800;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.paso p {
+    font-size: 13px;
+    color: #444444;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.grid-campos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.grid-campos .campo {
+    margin-bottom: 0;
+}
+
+.proxies {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0 0 20px;
+}
+
+.proxy {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, #ffffff 0%, #f7f8fc 100%);
+    border: 1px solid #e3e6ef;
+    border-left: 4px solid #2563eb;
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 6px rgba(16, 34, 77, 0.06);
+}
+
+.proxy-info {
+    flex: 1;
+    min-width: 200px;
+}
+
+.proxy-nombre {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111111;
+}
+
+.proxy-detalle {
+    font-size: 13px;
+    color: #666666;
+}
+
+.proxy-fecha {
+    font-size: 12px;
+    color: #999999;
+}
+
+.proxy-estado {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+.estado-en_proceso {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.estado-listo {
+    background: #ccfbf1;
+    color: #0f766e;
+}
+
+.modal-chat {
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-bottom: 1px solid #eeeeee;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.chat-estado-admin {
+    margin-bottom: 10px;
+}
+
+.chat-estado-admin .campo {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.chat-estado-admin select {
+    max-width: 220px;
+}
+
+.chat-mensajes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 46vh;
+    overflow-y: auto;
+    padding: 6px 2px;
+    flex: 1;
+}
+
+.chat-burbuja {
+    max-width: 78%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.chat-cliente {
+    align-self: flex-end;
+    background: #2563eb;
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-admin {
+    align-self: flex-start;
+    background: #e2e8f0;
+    color: #111111;
+    border-bottom-left-radius: 4px;
+}
+
+.chat-autor {
+    font-size: 11px;
+    font-weight: 700;
+    opacity: 0.85;
+    margin-bottom: 2px;
+}
+
+.chat-hora {
+    font-size: 11px;
+    opacity: 0.75;
+    margin-top: 3px;
+}
+
+.chat-pie {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.chat-input {
+    flex: 1;
+}
+
+@media (max-width: 520px) {
+    .chat-cliente,
+    .chat-admin {
+        max-width: 92%;
+    }
+}
