@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle del Producto</title>
+    <title>Detalle de la carta</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="pagina-ficha">
@@ -16,21 +16,89 @@
 </header>
 
 <div class="card card-detalle">
-    <h1>Detalle del Producto</h1>
+    <div class="detalle-pedido-subtitulo" id="miga">Detalle de la carta</div>
     <div id="detalle" class="detalle"></div>
-    <p id="noEncontrado" class="mensaje">No se encontro el producto.</p>
-    <a href="ver_productos.html" class="btn btn-volver">Volver a productos</a>
+    <p id="noEncontrado" class="mensaje" style="display:none;">No se encontró la carta.</p>
+    <div class="acciones-seccion">
+        <a href="ver_productos.html" class="btn btn-volver">Volver a productos</a>
+    </div>
 </div>
 
+<button type="button" id="btnCarritoFlotante" class="carrito-flotante" style="display:none;">Ver carrito (0)</button>
+
 <script type="module">
-    import { db, getDoc, doc } from './firebaseConfig.js';
+    import { db, getDoc, doc, productosRef, updateDoc, deleteDoc, obtenerEsAdmin } from './firebaseConfig.js';
+
+    const CLAVE_CARRITO = 'carrito';
+    const btnCarrito = document.getElementById('btnCarritoFlotante');
+
+    const NOMBRES_COLOR = { W: 'Blanco', U: 'Azul', B: 'Negro', R: 'Rojo', G: 'Verde' };
+
+    function formatearPrecio(precio) {
+        const numero = Number(precio);
+        if (!Number.isFinite(numero)) return '$' + precio;
+        return numero.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    function obtenerCarrito() {
+        try {
+            const guardado = JSON.parse(localStorage.getItem(CLAVE_CARRITO) || '[]');
+            return Array.isArray(guardado) ? guardado : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function cantidadTotal(items) {
+        return items.reduce(function (t, i) { return t + (Number(i.cantidad) || 0); }, 0);
+    }
+
+    function guardarCarrito(items) {
+        localStorage.setItem(CLAVE_CARRITO, JSON.stringify(items));
+        const total = cantidadTotal(items);
+        btnCarrito.style.display = total > 0 ? '' : 'none';
+        btnCarrito.textContent = 'Ver carrito (' + total + ')';
+    }
+
+    function agregarAlCarrito(producto) {
+        const carrito = obtenerCarrito();
+        const existente = carrito.find(function (item) { return item.id === producto.id; });
+        if (existente) {
+            existente.cantidad += 1;
+        } else {
+            carrito.push({
+                id: producto.id,
+                nombre: producto.nombre,
+                precio: Number(producto.precio),
+                imagen: producto.imagen || '',
+                cantidad: 1
+            });
+        }
+        guardarCarrito(carrito);
+        alert('"' + producto.nombre + '" se agregó al carrito.');
+    }
+
+    btnCarrito.addEventListener('click', function () {
+        location.href = 'ver_productos.html?carrito=1';
+    });
+
+    function textoColores(producto) {
+        const colores = Array.isArray(producto.colores) ? producto.colores : [];
+        if (colores.length === 0) return '';
+        return 'Colores: ' + colores.map(function (c) { return NOMBRES_COLOR[c] || c; }).join(', ');
+    }
 
     function mostrarDetalle() {
         const contenedor = document.getElementById('detalle');
         const noEncontrado = document.getElementById('noEncontrado');
-
         const parametros = new URLSearchParams(window.location.search);
         const id = parametros.get('id');
+
+        if (!id) {
+            contenedor.style.display = 'none';
+            noEncontrado.style.display = 'block';
+            return;
+        }
 
         getDoc(doc(db, 'productos', id))
             .then(function (snapshot) {
@@ -39,66 +107,148 @@
                 }
                 const producto = { id: snapshot.id, ...snapshot.data() };
                 noEncontrado.style.display = 'none';
+                document.getElementById('miga').textContent = 'Carta: ' + producto.nombre;
 
-        const ficha = document.createElement('div');
-        ficha.className = 'ficha';
+                const ficha = document.createElement('div');
+                ficha.className = 'ficha ficha-detalle';
 
-        const imagen = document.createElement('div');
-        imagen.className = 'ficha-imagen';
-        if (producto.imagen) {
-            const img = document.createElement('img');
-            img.src = producto.imagen;
-            img.alt = producto.nombre;
-            imagen.appendChild(img);
-        } else {
-            imagen.textContent = 'MTG';
-        }
+                const imagen = document.createElement('div');
+                imagen.className = 'ficha-imagen';
+                if (producto.imagen) {
+                    const img = document.createElement('img');
+                    img.src = producto.imagen;
+                    img.alt = producto.nombre;
+                    imagen.appendChild(img);
+                } else {
+                    imagen.textContent = 'MTG';
+                }
 
-        const info = document.createElement('div');
-        info.className = 'ficha-info';
+                const info = document.createElement('div');
+                info.className = 'ficha-info';
 
-        const tipo = document.createElement('div');
-        tipo.className = 'ficha-tipo';
-        tipo.textContent = 'Cartas de MTG';
+                const tipo = document.createElement('div');
+                tipo.className = 'ficha-tipo';
+                tipo.textContent = 'Cartas de MTG';
 
-        const nombre = document.createElement('div');
-        nombre.className = 'ficha-nombre';
-        nombre.textContent = producto.nombre;
+                const nombre = document.createElement('div');
+                nombre.className = 'ficha-nombre';
+                nombre.textContent = producto.nombre;
 
-        const descripcion = document.createElement('div');
-        descripcion.className = 'ficha-descripcion';
-        descripcion.textContent = producto.descripcion;
+                const descripcion = document.createElement('div');
+                descripcion.className = 'ficha-descripcion';
+                descripcion.textContent = producto.descripcion;
 
-        const precioEtiqueta = document.createElement('div');
-        precioEtiqueta.className = 'ficha-etiqueta';
-        precioEtiqueta.textContent = 'Precio';
+                const metas = document.createElement('div');
+                metas.className = 'ficha-metas';
 
-        const stockEtiqueta = document.createElement('div');
-        stockEtiqueta.className = 'ficha-etiqueta';
-        stockEtiqueta.textContent = 'Stock';
+                const precio = document.createElement('div');
+                precio.className = 'ficha-pill ficha-pill-precio';
+                precio.textContent = formatearPrecio(producto.precio);
+                metas.appendChild(precio);
 
-        const stock = document.createElement('div');
-        stock.className = 'ficha-stock';
-        const stockNum = Number(producto.stock);
-        stock.textContent = (Number.isFinite(stockNum) && stockNum > 0) ? 'Disponibles: ' + stockNum : 'Sin stock';
-        stock.classList.add(Number.isFinite(stockNum) && stockNum > 0 ? 'ficha-stock-en' : 'ficha-stock-agotado');
+                const stock = document.createElement('div');
+                const stockNum = Number(producto.stock);
+                stock.className = 'ficha-pill ' + (Number.isFinite(stockNum) && stockNum > 0 ? 'ficha-pill-stock' : 'ficha-pill-agotado');
+                stock.textContent = (Number.isFinite(stockNum) && stockNum > 0) ? 'Disponibles: ' + stockNum : 'Sin stock';
+                metas.appendChild(stock);
 
-        const precio = document.createElement('div');
-        precio.className = 'ficha-precio';
-        precio.textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(producto.precio));
+                const colores = textoColores(producto);
+                if (colores) {
+                    const chip = document.createElement('div');
+                    chip.className = 'ficha-pill ficha-pill-color';
+                    chip.textContent = colores;
+                    metas.appendChild(chip);
+                }
 
-        info.appendChild(tipo);
-        info.appendChild(nombre);
-        info.appendChild(descripcion);
-        info.appendChild(stockEtiqueta);
-        info.appendChild(stock);
-        info.appendChild(precioEtiqueta);
-        info.appendChild(precio);
+                const acciones = document.createElement('div');
+                acciones.className = 'ficha-acciones';
 
-        ficha.appendChild(imagen);
-        ficha.appendChild(info);
+                const btnAgregar = document.createElement('button');
+                btnAgregar.type = 'button';
+                btnAgregar.className = 'btn-accion btn-pedir btn-grande';
+                btnAgregar.textContent = 'Agregar al carrito';
+                btnAgregar.onclick = function () { agregarAlCarrito(producto); };
+                acciones.appendChild(btnAgregar);
 
-        contenedor.appendChild(ficha);
+                info.appendChild(tipo);
+                info.appendChild(nombre);
+                info.appendChild(descripcion);
+                info.appendChild(metas);
+                info.appendChild(acciones);
+
+                ficha.appendChild(imagen);
+                ficha.appendChild(info);
+                contenedor.appendChild(ficha);
+
+                guardarCarrito(obtenerCarrito());
+
+                obtenerEsAdmin().then(function (admin) {
+                    if (!admin) return;
+
+                    const stockAdmin = document.createElement('div');
+                    stockAdmin.className = 'stock-admin';
+                    stockAdmin.style.display = 'flex';
+
+                    const campoStock = document.createElement('label');
+                    campoStock.className = 'campo';
+                    const span = document.createElement('span');
+                    span.textContent = 'Stock';
+                    const inputStock = document.createElement('input');
+                    inputStock.type = 'number';
+                    inputStock.min = '0';
+                    inputStock.step = '1';
+                    inputStock.value = Number(producto.stock) || 0;
+                    campoStock.appendChild(span);
+                    campoStock.appendChild(inputStock);
+
+                    const btnGuardar = document.createElement('button');
+                    btnGuardar.type = 'button';
+                    btnGuardar.className = 'btn-accion btn-editar btn-grande';
+                    btnGuardar.textContent = 'Guardar stock';
+                    btnGuardar.onclick = async function () {
+                        const nuevo = Number(inputStock.value);
+                        if (!Number.isInteger(nuevo) || nuevo < 0) {
+                            alert('El stock debe ser un número entero mayor o igual a 0.');
+                            return;
+                        }
+                        try {
+                            await updateDoc(doc(productosRef, producto.id), { stock: nuevo });
+                            alert('Stock actualizado a ' + nuevo + '.');
+                            location.reload();
+                        } catch (error) {
+                            alert('Error al actualizar el stock: ' + error.message);
+                        }
+                    };
+
+                    const btnEditar = document.createElement('button');
+                    btnEditar.type = 'button';
+                    btnEditar.className = 'btn-accion btn-editar btn-grande';
+                    btnEditar.textContent = 'Editar carta';
+                    btnEditar.onclick = function () {
+                        location.href = 'editar_producto.html?id=' + producto.id;
+                    };
+
+                    const btnEliminar = document.createElement('button');
+                    btnEliminar.type = 'button';
+                    btnEliminar.className = 'btn-accion btn-eliminar btn-grande';
+                    btnEliminar.textContent = 'Eliminar carta';
+                    btnEliminar.onclick = async function () {
+                        if (confirm('¿Estás seguro de que quieres eliminar "' + producto.nombre + '"?')) {
+                            try {
+                                await deleteDoc(doc(productosRef, producto.id));
+                                location.href = 'ver_productos.html';
+                            } catch (error) {
+                                alert('Error al eliminar: ' + error.message);
+                            }
+                        }
+                    };
+
+                    stockAdmin.appendChild(campoStock);
+                    stockAdmin.appendChild(btnGuardar);
+                    acciones.appendChild(stockAdmin);
+                    acciones.appendChild(btnEditar);
+                    acciones.appendChild(btnEliminar);
+                });
             })
             .catch(function () {
                 contenedor.style.display = 'none';

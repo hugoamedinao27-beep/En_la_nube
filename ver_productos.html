@@ -63,25 +63,6 @@
     <a href="index.html" class="btn btn-volver">Volver al inicio</a>
 </div>
 
-<div id="modal" class="modal-overlay">
-    <div class="modal-contenido">
-        <button type="button" id="cerrarModal" class="btn-cerrar" title="Cerrar">&times;</button>
-        <div id="detalleModal" class="detalle"></div>
-        <div id="stockAdmin" class="stock-admin" style="display:none;">
-            <label class="campo">
-                <span>Stock</span>
-                <input type="number" id="inputStock" min="0" step="1">
-            </label>
-            <button type="button" id="btnGuardarStock" class="btn-accion btn-editar btn-grande">Guardar stock</button>
-        </div>
-        <div class="modal-acciones">
-            <button type="button" id="btnPedirModal" class="btn-accion btn-pedir btn-grande">Agregar al carrito</button>
-            <button type="button" id="btnModificarModal" class="btn-accion btn-editar btn-grande">Modificar</button>
-            <button type="button" id="btnEliminarModal" class="btn-accion btn-eliminar btn-grande">Eliminar</button>
-        </div>
-    </div>
-</div>
-
 <button type="button" id="btnCarritoFlotante" class="carrito-flotante">Ver carrito (0)</button>
 
 <div id="modalCarrito" class="modal-overlay">
@@ -132,6 +113,10 @@
         filtroColor.addEventListener('change', render);
         precioMin.addEventListener('input', render);
         precioMax.addEventListener('input', render);
+
+        if (new URLSearchParams(window.location.search).get('carrito') === '1') {
+            abrirCarrito();
+        }
     });
 
     function cargarProductos() {
@@ -295,152 +280,19 @@
         carta.appendChild(botonAgregar);
 
         carta.addEventListener('click', function () {
-            abrirModal(p);
+            location.href = 'detalle_producto.html?id=' + encodeURIComponent(p.id);
         });
         carta.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                abrirModal(p);
+                location.href = 'detalle_producto.html?id=' + encodeURIComponent(p.id);
             }
         });
 
         return carta;
     }
 
-    function abrirModal(producto) {
-        const contenedor = document.getElementById('detalleModal');
-        contenedor.innerHTML = ''; 
-
-        const ficha = document.createElement('div');
-        ficha.className = 'ficha';
-
-        const imagen = document.createElement('div');
-        imagen.className = 'ficha-imagen';
-        if (producto.imagen) {
-            const img = document.createElement('img');
-            img.src = producto.imagen;
-            img.alt = producto.nombre;
-            imagen.appendChild(img);
-        } else {
-            imagen.textContent = 'MTG';
-        }
-
-        const info = document.createElement('div');
-        info.className = 'ficha-info';
-
-        const tipo = document.createElement('div');
-        tipo.className = 'ficha-tipo';
-        tipo.textContent = 'Cartas de MTG';
-
-        const nombre = document.createElement('div');
-        nombre.className = 'ficha-nombre';
-        nombre.textContent = producto.nombre;
-
-        const descripcion = document.createElement('div');
-        descripcion.className = 'ficha-descripcion';
-        descripcion.textContent = producto.descripcion;
-
-        const stockEtiqueta = document.createElement('div');
-        stockEtiqueta.className = 'ficha-etiqueta';
-        stockEtiqueta.textContent = 'Stock';
-
-        const stock = document.createElement('div');
-        stock.className = 'ficha-stock';
-        const stockNum = Number(producto.stock);
-        stock.textContent = (Number.isFinite(stockNum) && stockNum > 0) ? 'Disponibles: ' + stockNum : 'Sin stock';
-        stock.classList.add(Number.isFinite(stockNum) && stockNum > 0 ? 'ficha-stock-en' : 'ficha-stock-agotado');
-
-        const precioEtiqueta = document.createElement('div');
-        precioEtiqueta.className = 'ficha-etiqueta';
-        precioEtiqueta.textContent = 'Precio';
-
-        const precio = document.createElement('div');
-        precio.className = 'ficha-precio';
-        precio.textContent = formatearPrecio(producto.precio);
-
-        info.appendChild(tipo);
-        info.appendChild(nombre);
-        info.appendChild(descripcion);
-        info.appendChild(stockEtiqueta);
-        info.appendChild(stock);
-        info.appendChild(precioEtiqueta);
-        info.appendChild(precio);
-
-        ficha.appendChild(imagen);
-        ficha.appendChild(info);
-
-        contenedor.appendChild(ficha);
-
-        const btnPedir = document.getElementById('btnPedirModal');
-        btnPedir.style.display = '';
-        btnPedir.onclick = function () {
-            agregarAlCarrito(producto);
-        };
-
-        const btnModificar = document.getElementById('btnModificarModal');
-        const btnEliminar = document.getElementById('btnEliminarModal');
-
-        btnModificar.style.display = esAdmin ? '' : 'none';
-        btnEliminar.style.display = esAdmin ? '' : 'none';
-
-        const stockAdmin = document.getElementById('stockAdmin');
-        const inputStock = document.getElementById('inputStock');
-        stockAdmin.style.display = esAdmin ? 'flex' : 'none';
-        if (esAdmin) {
-            inputStock.value = Number(producto.stock) || 0;
-            inputStock.onkeydown = function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    guardarStock(producto);
-                }
-            };
-        }
-
-        const btnGuardarStock = document.getElementById('btnGuardarStock');
-        btnGuardarStock.style.display = esAdmin ? '' : 'none';
-        btnGuardarStock.onclick = function () {
-            guardarStock(producto);
-        };
-
-        btnModificar.onclick = function () {
-            location.href = 'editar_producto.html?id=' + producto.id;
-        };
-
-        btnEliminar.onclick = async function () {
-            if (confirm('¿Estás seguro de que quieres eliminar "' + producto.nombre + '"?')) {
-                try {
-                    await deleteDoc(doc(productosRef, producto.id));
-                    cerrarModal();
-                    cargarProductos();
-                } catch (error) {
-                    alert('Error al eliminar: ' + error.message);
-                }
-            }
-        };
-
-        document.getElementById('modal').style.display = 'flex';
-    }
-
-    function guardarStock(producto) {
-        const inputStock = document.getElementById('inputStock');
-        const nuevoStock = Number(inputStock.value);
-
-        if (!Number.isInteger(nuevoStock) || nuevoStock < 0) {
-            alert('El stock debe ser un número entero mayor o igual a 0.');
-            return;
-        }
-
-        updateDoc(doc(productosRef, producto.id), { stock: nuevoStock })
-            .then(function () {
-                alert('Stock actualizado a ' + nuevoStock + '.');
-                cargarProductos();
-            })
-            .catch(function (error) {
-                alert('Error al actualizar el stock: ' + error.message);
-            });
-    }
-
-    // ── Carrito (guardado en localStorage) ──
+// ── Carrito (guardado en localStorage) ──
     const CLAVE_CARRITO = 'carrito';
 
     function obtenerCarrito() {
@@ -810,19 +662,6 @@
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             cerrarCarrito();
-            cerrarModal();
-        }
-    });
-
-    function cerrarModal() {
-        document.getElementById('modal').style.display = 'none';
-    }
-
-    document.getElementById('cerrarModal').addEventListener('click', cerrarModal);
-
-    document.getElementById('modal').addEventListener('click', function (e) {
-        if (e.target === this) {
-            cerrarModal();
         }
     });
 
