@@ -9,6 +9,10 @@ const EMAILJS = {
     templateId: 'template_ym3oh7e'
 };
 
+// Email de la tienda: recibe los avisos de pedidos nuevos, solicitudes de
+// proxy y mensajes de los clientes en el area de proxies.
+const EMAIL_ADMIN = 'cartonpitado67@gmail.com';
+
 // Mensajes por evento. Asunto y cuerpo van en el correo (la plantilla de
 // EmailJS usa {{asunto}}, {{mensaje}}, {{detalle}}, {{total}} y {{pedidoId}}).
 const ASUNTOS = {
@@ -93,4 +97,82 @@ async function enviarAvisoPedido(pedido, evento) {
     }
 }
 
-export { enviarAvisoPedido };
+// ── Avisos al admin (nuevos pedidos y actividad de proxies) ──
+
+function armarParamsAdmin(asunto, mensaje, detalle, total, refId) {
+    return {
+        to_email: EMAIL_ADMIN,
+        name: 'Admin',
+        cliente: EMAIL_ADMIN,
+        asunto: asunto,
+        titulo: asunto,
+        mensaje: mensaje,
+        detalle: detalle,
+        total: total || '',
+        pedidoId: refId || ''
+    };
+}
+
+async function enviarAvisoAdmin(asunto, mensaje, detalle, total, refId) {
+    if (!EMAIL_ADMIN) {
+        console.warn('EMAIL_ADMIN sin configurar: no se envió el aviso al admin.');
+        return { ok: false, error: 'EMAIL_ADMIN sin configurar' };
+    }
+    if (!estaConfigurado()) {
+        console.warn('EmailJS sin configurar: no se envió el aviso al admin.');
+        return { ok: false, error: 'EmailJS sin configurar' };
+    }
+    try {
+        await emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, armarParamsAdmin(asunto, mensaje, detalle, total, refId), { publicKey: EMAILJS.publicKey });
+        return { ok: true };
+    } catch (error) {
+        const mensajeError = (error && (error.text || error.message)) || 'Error al enviar el correo';
+        console.warn('No se pudo enviar el aviso al admin:', mensajeError);
+        return { ok: false, error: mensajeError };
+    }
+}
+
+function detalleProxy(proxie) {
+    const partes = [];
+    if (proxie.nombreCarta) partes.push('Carta: ' + proxie.nombreCarta);
+    if (proxie.cantidad) partes.push('Cantidad: ' + proxie.cantidad);
+    if (proxie.expansion) partes.push('Expansión: ' + proxie.expansion);
+    if (proxie.tipo) partes.push('Tipo: ' + proxie.tipo);
+    if (proxie.tamano) partes.push('Tamaño: ' + proxie.tamano);
+    if (proxie.presupuesto) partes.push('Presupuesto: ' + formatearPrecio(proxie.presupuesto));
+    return partes.join('<br>');
+}
+
+function mensajeInicialProxy(proxie) {
+    if (Array.isArray(proxie.mensajes) && proxie.mensajes.length > 0) {
+        return String(proxie.mensajes[0].texto || '');
+    }
+    return '';
+}
+
+// Correo al admin cada vez que un cliente deja un pedido.
+async function enviarAvisoNuevoPedido(pedido) {
+    const cliente = pedido.usuarioEmail || 'Cliente';
+    const cantidad = obtenerItems(pedido).reduce(function (t, i) { return t + Number(i.cantidad); }, 0);
+    const asunto = 'Nuevo pedido recibido';
+    const mensaje = 'El cliente ' + cliente + ' dejó un pedido de ' + cantidad + ' ítem(s).';
+    return enviarAvisoAdmin(asunto, mensaje, armarDetalle(pedido), calcularTotal(pedido), pedido.id);
+}
+
+// Correo al admin cuando un cliente crea una solicitud de proxie.
+async function enviarAvisoNuevoProxy(proxie) {
+    const asunto = 'Nueva solicitud de proxie';
+    const mensaje = 'El cliente ' + (proxie.usuarioEmail || 'Cliente') + ' quiere un proxie de "' + (proxie.nombreCarta || 'sin nombre') + '".';
+    const inicial = mensajeInicialProxy(proxie);
+    const detalle = detalleProxy(proxie) + (inicial ? '<br><br>' + inicial : '');
+    return enviarAvisoAdmin(asunto, mensaje, detalle, '', proxie.id);
+}
+
+// Correo al admin cuando un cliente escribe un mensaje nuevo en un proxie.
+async function enviarAvisoMensajeProxy(proxie, texto) {
+    const asunto = 'Nuevo mensaje en un proxie';
+    const mensaje = 'El cliente ' + (proxie.usuarioEmail || 'Cliente') + ' escribió en el proxie "' + (proxie.nombreCarta || 'sin nombre') + '":';
+    return enviarAvisoAdmin(asunto, mensaje, String(texto || ''), '', proxie.id);
+}
+
+export { enviarAvisoPedido, enviarAvisoNuevoPedido, enviarAvisoNuevoProxy, enviarAvisoMensajeProxy };

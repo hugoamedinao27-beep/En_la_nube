@@ -79,6 +79,15 @@ Cuando el admin marca un pedido como **listo para despacho** o **entregado**, se
 envia un correo al cliente con el detalle del pedido. Se usa [EmailJS](https://www.emailjs.com)
 desde el navegador (no hace falta backend). El codigo esta en `emailPedido.js`.
 
+Ademas, `emailPedido.js` envia correos a la tienda (`EMAIL_ADMIN`) cuando:
+
+- un cliente deja un **pedido nuevo** (`ver_productos.html`),
+- un cliente **solicita un proxie** o escribe un **mensaje nuevo** en el area de
+  proxies (`crea_proxy.html`).
+
+Reusan la misma plantilla y servicio de EmailJS; alcanza con tener `EMAIL_ADMIN`
+con el correo de la tienda.
+
 Para activarlo:
 
 1. Crear una cuenta en https://www.emailjs.com (el plan gratis alcanza para una tienda chica).

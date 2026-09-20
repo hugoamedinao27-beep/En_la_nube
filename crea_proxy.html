@@ -161,6 +161,7 @@
 
 <script type="module">
     import { auth, onAuthStateChanged, db, collection, addDoc, updateDoc, doc, query, where, onSnapshot, arrayUnion, serverTimestamp, recargarUsuario, enviarCorreoVerificacion, mostrarNotificacion } from './firebaseConfig.js';
+    import { enviarAvisoNuevoProxy, enviarAvisoMensajeProxy } from './emailPedido.js';
 
     const bloqueInvitado = document.getElementById('bloqueInvitado');
     const bloqueLogueado = document.getElementById('bloqueLogueado');
@@ -343,11 +344,17 @@
         };
 
         try {
-            await addDoc(collection(db, 'proxies'), datosProxy);
+            const refProxy = await addDoc(collection(db, 'proxies'), datosProxy);
             formProxy.reset();
             document.getElementById('cantidad').value = '1';
             avisoForm.textContent = '¡Solicitud enviada! El admin te va a responder en la conversación.';
             avisoForm.style.color = '#15803d';
+
+            enviarAvisoNuevoProxy(Object.assign({ id: refProxy.id }, datosProxy)).then(function (resultado) {
+                if (!resultado.ok && resultado.error !== 'EmailJS sin configurar' && resultado.error !== 'EMAIL_ADMIN sin configurar') {
+                    console.warn('No se pudo avisar de la solicitud por correo:', resultado.error);
+                }
+            });
         } catch (error) {
             avisoForm.textContent = 'No se pudo enviar la solicitud: ' + error.message;
             avisoForm.style.color = '#dc2626';
@@ -447,6 +454,12 @@
         input.value = '';
         updateDoc(doc(db, 'proxies', proxyActual.id), {
             mensajes: arrayUnion({ de: 'cliente', texto: texto, fecha: new Date() })
+        }).then(function () {
+            enviarAvisoMensajeProxy(proxyActual, texto).then(function (resultado) {
+                if (!resultado.ok && resultado.error !== 'EmailJS sin configurar' && resultado.error !== 'EMAIL_ADMIN sin configurar') {
+                    console.warn('No se pudo avisar del mensaje por correo:', resultado.error);
+                }
+            });
         }).catch(function () {
             input.value = texto;
             mostrarNotificacion('No se pudo enviar el mensaje. Intentá de nuevo.', 'error');

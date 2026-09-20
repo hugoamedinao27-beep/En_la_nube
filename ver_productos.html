@@ -90,6 +90,7 @@
 
 <script type="module">
     import { productosRef, collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, auth, onAuthStateChanged, db, serverTimestamp, runTransaction, obtenerEsAdmin, recargarUsuario, enviarCorreoVerificacion, mostrarNotificacion } from './firebaseConfig.js';
+    import { enviarAvisoNuevoPedido } from './emailPedido.js';
 
     let productosDisponibles = [];
     let esAdmin = false;
@@ -670,6 +671,20 @@
             cargarProductos();
             generarPDF(carrito, user.email, pedidoRef.id);
             mostrarNotificacion('Pedido registrado. Se descontó el stock y se descargó el PDF.');
+
+            const totalPedido = items.reduce(function (t, i) {
+                return t + Number(i.productoPrecio) * Number(i.cantidad);
+            }, 0);
+            enviarAvisoNuevoPedido({
+                id: pedidoRef.id,
+                items: items,
+                total: totalPedido,
+                usuarioEmail: user.email
+            }).then(function (resultado) {
+                if (!resultado.ok && resultado.error !== 'EmailJS sin configurar' && resultado.error !== 'EMAIL_ADMIN sin configurar') {
+                    console.warn('No se pudo avisar del pedido por correo:', resultado.error);
+                }
+            });
         } catch (error) {
             mostrarNotificacion('Error al registrar el pedido: ' + error.message, 'error');
         } finally {
