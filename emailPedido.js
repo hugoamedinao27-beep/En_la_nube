@@ -11,7 +11,7 @@ const EMAILJS = {
 
 // Email de la tienda: recibe los avisos de pedidos nuevos, solicitudes de
 // proxy y mensajes de los clientes en el area de proxies.
-const EMAIL_ADMIN = 'cartonpitado67@gmail.com';
+const EMAIL_ADMIN = 'cartonpintado67@gmail.com';
 
 // Mensajes por evento. Asunto y cuerpo van en el correo (la plantilla de
 // EmailJS usa {{asunto}}, {{mensaje}}, {{detalle}}, {{total}} y {{pedidoId}}).
