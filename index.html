@@ -65,7 +65,7 @@
 </footer>
 
 <script type="module">
-    import { auth, onAuthStateChanged, signOut, obtenerEsAdmin, productosRef, getDocs, query, orderBy, enviarCorreoVerificacion } from './firebaseConfig.js';
+    import { auth, onAuthStateChanged, signOut, obtenerEsAdmin, productosRef, getDocs, query, orderBy, enviarCorreoVerificacion, mostrarNotificacion } from './firebaseConfig.js';
 
     const botonesInvitado = document.getElementById('botonesInvitado');
     const botonesRegistrado = document.getElementById('botonesRegistrado');
@@ -102,9 +102,9 @@
 
     btnReenviarVerificacion.addEventListener('click', function () {
         enviarCorreoVerificacion(auth.currentUser).then(function (ok) {
-            alert(ok
+            mostrarNotificacion(ok
                 ? 'Revisá tu casilla de email y hacé click en el enlace para verificar tu cuenta.'
-                : 'No se pudo enviar el correo de verificación. Probá de nuevo más tarde.');
+                : 'No se pudo enviar el correo de verificación. Probá de nuevo más tarde.', ok ? 'info' : 'error');
         });
     });
 
@@ -112,7 +112,7 @@
         signOut(auth).then(function () {
             location.reload();
         }).catch(function () {
-            alert('Error al cerrar sesión.');
+            mostrarNotificacion('Error al cerrar sesión.', 'error');
         });
     });
 

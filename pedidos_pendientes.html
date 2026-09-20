@@ -24,7 +24,7 @@
 </div>
 
 <script type="module">
-    import { db, collection, getDocs, query, where, updateDoc, doc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
+    import { db, collection, getDocs, query, where, updateDoc, doc, serverTimestamp, obtenerEsAdmin, mostrarNotificacion } from './firebaseConfig.js';
     import { enviarAvisoPedido } from './emailPedido.js';
 
     obtenerEsAdmin().then(function (admin) {
@@ -167,13 +167,13 @@
             cargarPedidos();
             enviarAvisoPedido(Object.assign({ id: id }, p), 'listo_para_despacho').then(function (resultado) {
                 if (!resultado.ok && resultado.error !== 'EmailJS sin configurar') {
-                    alert('El pedido quedó listo para despacho, pero no se pudo enviar el correo: ' + resultado.error);
+                    mostrarNotificacion('El pedido quedó listo para despacho, pero no se pudo enviar el correo: ' + resultado.error, 'error');
                 }
             });
         }).catch(function (error) {
             btn.disabled = false;
             btn.textContent = 'Listo para despacho';
-            alert('Error al actualizar el pedido: ' + error.message);
+            mostrarNotificacion('Error al actualizar el pedido: ' + error.message, 'error');
         });
     }
 </script>

@@ -67,7 +67,7 @@
 </div>
 
 <script type="module">
-    import { db, collection, updateDoc, doc, query, orderBy, onSnapshot, arrayUnion, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
+    import { db, collection, updateDoc, doc, query, orderBy, onSnapshot, arrayUnion, serverTimestamp, obtenerEsAdmin, mostrarNotificacion } from './firebaseConfig.js';
 
     const filtroEstado = document.getElementById('filtroEstado');
     const listaProxies = document.getElementById('listaProxies');
@@ -283,7 +283,7 @@
             mensajes: arrayUnion({ de: 'admin', texto: texto, fecha: new Date() })
         }).catch(function () {
             input.value = texto;
-            alert('No se pudo enviar el mensaje. Intentá de nuevo.');
+            mostrarNotificacion('No se pudo enviar el mensaje. Intentá de nuevo.', 'error');
         });
     }
 
@@ -294,7 +294,7 @@
             estado: estado,
             actualizado: serverTimestamp()
         }).catch(function (error) {
-            alert('Error al actualizar el estado: ' + error.message);
+            mostrarNotificacion('Error al actualizar el estado: ' + error.message, 'error');
         });
     });
 

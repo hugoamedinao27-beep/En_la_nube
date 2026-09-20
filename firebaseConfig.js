@@ -78,4 +78,23 @@ async function obtenerEsAdmin() {
   }
 }
 
-export { db, productosRef, collection, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, where, runTransaction, arrayUnion, onSnapshot, auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, usuarioActual, obtenerEsAdmin, recargarUsuario, enviarCorreoVerificacion };
+// Notificacion no intrusiva (toast) que aparece flotando y desaparece sola.
+// tipo: 'exito' (por defecto), 'error' o 'info'.
+function mostrarNotificacion(mensaje, tipo) {
+  let tostadora = document.getElementById('tostadora');
+  if (!tostadora) {
+    tostadora = document.createElement('div');
+    tostadora.id = 'tostadora';
+    document.body.appendChild(tostadora);
+  }
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-' + (tipo === 'error' ? 'error' : tipo === 'info' ? 'info' : 'exito');
+  toast.textContent = mensaje;
+  tostadora.appendChild(toast);
+  setTimeout(function () {
+    toast.classList.add('toast-salida');
+    setTimeout(function () { toast.remove(); }, 300);
+  }, 3200);
+}
+
+export { db, productosRef, collection, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, where, runTransaction, arrayUnion, onSnapshot, auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, usuarioActual, obtenerEsAdmin, recargarUsuario, enviarCorreoVerificacion, mostrarNotificacion };

@@ -39,7 +39,7 @@
 </div>
 
 <script type="module">
-    import { db, collection, getDocs, query, orderBy, updateDoc, doc, serverTimestamp, obtenerEsAdmin } from './firebaseConfig.js';
+    import { db, collection, getDocs, query, orderBy, updateDoc, doc, serverTimestamp, obtenerEsAdmin, mostrarNotificacion } from './firebaseConfig.js';
     import { enviarAvisoPedido } from './emailPedido.js';
 
     obtenerEsAdmin().then(function (admin) {
@@ -233,13 +233,13 @@
             if (nuevoEstado === 'entregado' && estadoAnterior !== 'entregado') {
                 enviarAvisoPedido(Object.assign({ id: id }, pedido), 'entregado').then(function (resultado) {
                     if (!resultado.ok && resultado.error !== 'EmailJS sin configurar') {
-                        alert('El pedido se marcó como entregado, pero no se pudo enviar el correo: ' + resultado.error);
+                        mostrarNotificacion('El pedido se marcó como entregado, pero no se pudo enviar el correo: ' + resultado.error, 'error');
                     }
                 });
             }
             if (despuesDeGuardar) despuesDeGuardar();
         }).catch(function (error) {
-            alert('Error al actualizar el pedido: ' + error.message);
+            mostrarNotificacion('Error al actualizar el pedido: ' + error.message, 'error');
         });
     }
 

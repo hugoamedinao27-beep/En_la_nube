@@ -27,7 +27,7 @@
 <button type="button" id="btnCarritoFlotante" class="carrito-flotante" style="display:none;">Ver carrito (0)</button>
 
 <script type="module">
-    import { db, getDoc, doc, productosRef, updateDoc, deleteDoc, obtenerEsAdmin } from './firebaseConfig.js';
+    import { db, getDoc, doc, productosRef, updateDoc, deleteDoc, obtenerEsAdmin, mostrarNotificacion } from './firebaseConfig.js';
 
     const CLAVE_CARRITO = 'carrito';
     const btnCarrito = document.getElementById('btnCarritoFlotante');
@@ -75,7 +75,7 @@
             });
         }
         guardarCarrito(carrito);
-        alert('"' + producto.nombre + '" se agregó al carrito.');
+        mostrarNotificacion('"' + producto.nombre + '" se agregó al carrito.');
     }
 
     btnCarrito.addEventListener('click', function () {
@@ -208,15 +208,15 @@
                     btnGuardar.onclick = async function () {
                         const nuevo = Number(inputStock.value);
                         if (!Number.isInteger(nuevo) || nuevo < 0) {
-                            alert('El stock debe ser un número entero mayor o igual a 0.');
+                            mostrarNotificacion('El stock debe ser un número entero mayor o igual a 0.', 'error');
                             return;
                         }
                         try {
                             await updateDoc(doc(productosRef, producto.id), { stock: nuevo });
-                            alert('Stock actualizado a ' + nuevo + '.');
+                            mostrarNotificacion('Stock actualizado a ' + nuevo + '.');
                             location.reload();
                         } catch (error) {
-                            alert('Error al actualizar el stock: ' + error.message);
+                            mostrarNotificacion('Error al actualizar el stock: ' + error.message, 'error');
                         }
                     };
 
@@ -238,7 +238,7 @@
                                 await deleteDoc(doc(productosRef, producto.id));
                                 location.href = 'ver_productos.html';
                             } catch (error) {
-                                alert('Error al eliminar: ' + error.message);
+                                mostrarNotificacion('Error al eliminar: ' + error.message, 'error');
                             }
                         }
                     };

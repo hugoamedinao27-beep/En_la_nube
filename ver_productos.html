@@ -82,7 +82,7 @@
 </div>
 
 <script type="module">
-    import { productosRef, collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, auth, onAuthStateChanged, db, serverTimestamp, runTransaction, obtenerEsAdmin, recargarUsuario, enviarCorreoVerificacion } from './firebaseConfig.js';
+    import { productosRef, collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, auth, onAuthStateChanged, db, serverTimestamp, runTransaction, obtenerEsAdmin, recargarUsuario, enviarCorreoVerificacion, mostrarNotificacion } from './firebaseConfig.js';
 
     let productosDisponibles = [];
     let esAdmin = false;
@@ -324,7 +324,7 @@
             });
         }
         guardarCarrito(carrito);
-        alert('"' + producto.nombre + '" se agregó al carrito.');
+        mostrarNotificacion('"' + producto.nombre + '" se agregó al carrito.');
     }
 
     function cambiarCantidad(id, delta) {
@@ -530,7 +530,7 @@
     async function finalizarPedido() {
         const carrito = obtenerCarrito();
         if (carrito.length === 0) {
-            alert('El carrito está vacío.');
+            mostrarNotificacion('El carrito está vacío.', 'info');
             return;
         }
 
@@ -547,7 +547,7 @@
             const quiere = confirm('Para finalizar un pedido tu email debe estar verificado. ¿Te enviamos ahora el enlace de verificación?');
             if (quiere) {
                 await enviarCorreoVerificacion(user);
-                alert('Revisá tu casilla de email y hacé click en el enlace para verificar tu cuenta.');
+                mostrarNotificacion('Revisá tu casilla de email y hacé click en el enlace para verificar tu cuenta.', 'info');
             }
             return;
         }
@@ -626,9 +626,9 @@
             cerrarCarrito();
             cargarProductos();
             generarPDF(carrito, user.email, pedidoRef.id);
-            alert('Pedido registrado. Se descontó el stock y se descargó el PDF.');
+            mostrarNotificacion('Pedido registrado. Se descontó el stock y se descargó el PDF.');
         } catch (error) {
-            alert('Error al registrar el pedido: ' + error.message);
+            mostrarNotificacion('Error al registrar el pedido: ' + error.message, 'error');
         } finally {
             btnFinalizar.disabled = false;
             btnFinalizar.textContent = 'Finalizar pedido';

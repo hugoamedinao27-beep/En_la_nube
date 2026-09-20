@@ -160,7 +160,7 @@
 </div>
 
 <script type="module">
-    import { auth, onAuthStateChanged, db, collection, addDoc, updateDoc, doc, query, where, onSnapshot, arrayUnion, serverTimestamp, recargarUsuario, enviarCorreoVerificacion } from './firebaseConfig.js';
+    import { auth, onAuthStateChanged, db, collection, addDoc, updateDoc, doc, query, where, onSnapshot, arrayUnion, serverTimestamp, recargarUsuario, enviarCorreoVerificacion, mostrarNotificacion } from './firebaseConfig.js';
 
     const bloqueInvitado = document.getElementById('bloqueInvitado');
     const bloqueLogueado = document.getElementById('bloqueLogueado');
@@ -441,7 +441,7 @@
         const texto = input.value.trim();
         if (!texto || !proxyActual) return;
         if (!usuario.emailVerified) {
-            alert('Primero verificá tu email (enlace que te llegó por correo) y volvé a intentar.');
+            mostrarNotificacion('Primero verificá tu email (enlace que te llegó por correo) y volvé a intentar.', 'info');
             return;
         }
         input.value = '';
@@ -449,7 +449,7 @@
             mensajes: arrayUnion({ de: 'cliente', texto: texto, fecha: new Date() })
         }).catch(function () {
             input.value = texto;
-            alert('No se pudo enviar el mensaje. Intentá de nuevo.');
+            mostrarNotificacion('No se pudo enviar el mensaje. Intentá de nuevo.', 'error');
         });
     }
 
