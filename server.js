@@ -198,6 +198,7 @@ app.post('/api/productos', requereAdmin, upload.single('imagen'), async function
   }
 
   const imagen = req.file ? '/Imagenes/' + req.file.filename : '';
+  const categoria = req.body.categoria || 'mtg';
 
   try {
     const nuevoProducto = {
@@ -205,6 +206,7 @@ app.post('/api/productos', requereAdmin, upload.single('imagen'), async function
       descripcion: descripcion,
       precio: validacion.precio,
       stock: validacion.stock,
+      categoria: categoria,
       imagen: imagen,
       createdAt: FieldValue.serverTimestamp()
     };
@@ -250,7 +252,8 @@ app.put('/api/productos/:id', requereAdmin, upload.single('imagen'), async funct
       nombre: nombre,
       descripcion: descripcion,
       precio: validacion.precio,
-      stock: validacion.stock
+      stock: validacion.stock,
+      categoria: req.body.categoria || 'mtg'
     };
 
     if (req.file) {

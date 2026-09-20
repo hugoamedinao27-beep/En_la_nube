@@ -32,9 +32,27 @@
         <div id="resultadosBusqueda" class="resultados-cartas"></div>
     </div>
 
+    <div class="buscador-cartas buscador-onepiece">
+        <label class="campo">
+            <span>Buscar carta de One Piece por nombre (OPTCG API)</span>
+            <input type="search" id="busquedaOP" placeholder="Ej: Luffy, Zoro, Nami..." autocomplete="off">
+        </label>
+        <p id="estadoOP" class="buscador-estado"></p>
+        <div id="resultadosOP" class="resultados-cartas"></div>
+    </div>
+
     <p id="precioReferencia" class="precio-referencia"></p>
 
     <form id="formProducto" class="form">
+        <label class="campo">
+            <span>Categoría</span>
+            <select id="categoria" class="campo-select">
+                <option value="mtg">Magic: The Gathering</option>
+                <option value="one_piece">One Piece</option>
+                <option value="promocion">Promociones</option>
+                <option value="deck">Deck completo</option>
+            </select>
+        </label>
         <label class="campo">
             <span>Nombre</span>
             <input type="text" id="nombre" name="nombre" placeholder="Ej: Black Lotus" required>
@@ -55,7 +73,7 @@
             <span>Imagen de la carta</span>
             <input type="file" id="imagen" name="imagen" accept="image/*">
         </label>
-        <p id="avisoScryfall" class="aviso-scryfall">Imagen automatica de Scryfall: se descargara al guardar. Si subis tu propia imagen, esa se usa.</p>
+        <p id="avisoScryfall" class="aviso-scryfall">Imagen automatica de la API: se descargara al guardar. Si subis tu propia imagen, esa se usa.</p>
         <img id="vistaPrevia" class="vista-previa" alt="Vista previa">
         <input type="hidden" id="imagenUrl" value="">
         <input type="hidden" id="setCodigoGuardar" value="">
@@ -375,6 +393,161 @@
 
         resultadosBusqueda.innerHTML = '';
         estadoBusqueda.textContent = 'Carta seleccionada: ' + (cara.name || carta.name) + '. Completa precio y stock.';
+    }
+
+    // ── Buscador de cartas de One Piece (OPTCG API) ──
+    const inputBusquedaOP = document.getElementById('busquedaOP');
+    const estadoOP = document.getElementById('estadoOP');
+    const resultadosOP = document.getElementById('resultadosOP');
+    let temporizadorOP = null;
+
+    inputBusquedaOP.addEventListener('input', function () {
+        clearTimeout(temporizadorOP);
+        const termino = this.value.trim();
+        if (termino.length < 2) {
+            resultadosOP.innerHTML = '';
+            estadoOP.textContent = '';
+            return;
+        }
+        temporizadorOP = setTimeout(function () {
+            buscarOP(termino);
+        }, 600);
+    });
+
+    function limpiarNombreOP(nombre) {
+        return String(nombre || '')
+            .replace(/\s*\(Parallel\)\s*$/i, '')
+            .replace(/\s*\(Alternate Art\)\s*$/i, '')
+            .replace(/\s*\(\d+\)\s*$/i, '');
+    }
+
+    function construirDescripcionOP(carta) {
+        const partes = [];
+        if (carta.card_type) partes.push(carta.card_type);
+        if (carta.card_color) partes.push('Color: ' + carta.card_color);
+        if (carta.rarity) partes.push('Rareza: ' + carta.rarity);
+        if (carta.card_cost !== null && carta.card_cost !== undefined) partes.push('Costo: ' + carta.card_cost);
+        if (carta.card_power) partes.push('Poder: ' + carta.card_power);
+        if (carta.life) partes.push('Vida: ' + carta.life);
+        if (carta.counter_amount !== null && carta.counter_amount !== undefined) partes.push('Contra: ' + carta.counter_amount);
+        if (carta.attribute) partes.push('Atributo: ' + carta.attribute);
+        if (carta.sub_types) partes.push('Tipos: ' + carta.sub_types);
+        if (carta.set_name) partes.push('Set: ' + carta.set_name + (carta.set_id ? ' (' + carta.set_id + ')' : ''));
+        if (carta.card_text) {
+            partes.push('');
+            partes.push(carta.card_text);
+        }
+        return partes.join('\n');
+    }
+
+    function buscarOP(termino) {
+        estadoOP.textContent = 'Buscando...';
+        resultadosOP.innerHTML = '';
+
+        fetch('https://optcgapi.com/api/sets/filtered/?card_name=' + encodeURIComponent(termino))
+            .then(function (respuesta) {
+                if (!respuesta.ok) {
+                    throw new Error('error');
+                }
+                return respuesta.json();
+            })
+            .then(function (datos) {
+                const lista = Array.isArray(datos) ? datos.slice(0, 15) : [];
+                if (lista.length === 0) {
+                    estadoOP.textContent = 'No se encontraron cartas de One Piece.';
+                    return;
+                }
+                estadoOP.textContent = lista.length + ' resultado(s)';
+                mostrarResultadosOP(lista);
+            })
+            .catch(function () {
+                estadoOP.textContent = 'No se pudo conectar con la API de One Piece. Podes cargar la carta manualmente.';
+                resultadosOP.innerHTML = '';
+            });
+    }
+
+    function mostrarResultadosOP(lista) {
+        resultadosOP.innerHTML = '';
+        lista.forEach(function (carta) {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'resultado-carta';
+
+            const imagen = document.createElement('img');
+            imagen.className = 'resultado-carta-img';
+            if (carta.card_image) {
+                imagen.src = carta.card_image;
+                imagen.alt = carta.card_name;
+                imagen.loading = 'lazy';
+            }
+            item.appendChild(imagen);
+
+            const info = document.createElement('div');
+            info.className = 'resultado-carta-info';
+
+            const nombre = document.createElement('div');
+            nombre.className = 'resultado-carta-nombre';
+            nombre.textContent = limpiarNombreOP(carta.card_name);
+
+            const detalles = document.createElement('div');
+            detalles.className = 'resultado-carta-detalles';
+            const partesDetalle = [];
+            if (carta.card_type) partesDetalle.push(carta.card_type);
+            if (carta.rarity) partesDetalle.push(carta.rarity);
+            if (carta.card_color) partesDetalle.push(carta.card_color);
+            if (carta.set_name) partesDetalle.push(carta.set_name);
+            detalles.textContent = partesDetalle.join(' · ');
+
+            info.appendChild(nombre);
+            info.appendChild(detalles);
+
+            const usd = Number(carta.market_price);
+            if (Number.isFinite(usd) && usd > 0) {
+                const precio = document.createElement('div');
+                precio.className = 'resultado-carta-precio';
+                precio.textContent = 'Ref USD: $' + usd.toFixed(2);
+                info.appendChild(precio);
+            }
+
+            item.appendChild(info);
+
+            item.addEventListener('click', function () {
+                seleccionarOP(carta);
+            });
+
+            resultadosOP.appendChild(item);
+        });
+    }
+
+    function seleccionarOP(carta) {
+        const nombreLimpio = limpiarNombreOP(carta.card_name);
+
+        document.getElementById('categoria').value = 'one_piece';
+        document.getElementById('nombre').value = nombreLimpio;
+        document.getElementById('descripcion').value = construirDescripcionOP(carta);
+
+        const imagenUrl = carta.card_image || '';
+        inputImagenUrl.value = imagenUrl;
+
+        if (imagenUrl) {
+            vistaPrevia.src = imagenUrl;
+            vistaPrevia.style.display = 'block';
+            avisoScryfall.style.display = 'block';
+        } else {
+            vistaPrevia.style.display = 'none';
+            avisoScryfall.style.display = 'none';
+        }
+
+        const usd = Number(carta.market_price);
+        if (Number.isFinite(usd) && usd > 0) {
+            precioReferencia.textContent = 'Referencia OPTCG: aprox. $' + usd.toFixed(2) + ' USD. Pone tu precio de venta en ARS.';
+            precioReferencia.style.display = 'block';
+        } else {
+            precioReferencia.style.display = 'none';
+        }
+
+        resultadosOP.innerHTML = '';
+        estadoOP.textContent = 'Carta seleccionada: ' + nombreLimpio + '. Completa precio y stock.';
     }
 
     // ── Importacion por lista (CSV de Manabox / Moxfield) ──
@@ -884,6 +1057,7 @@
                         precio: fila.precio,
                         stock: fila.stock,
                         imagen: imagen,
+                        categoria: document.getElementById('categoria').value,
                         set_codigo: fila.card.set || '',
                         collector_numero: fila.card.collector_number || '',
                         colores: coloresDeCarta(fila.card),
@@ -949,7 +1123,7 @@
                 try {
                     imagen = await comprimirImagenDesdeUrl(inputImagenUrl.value, 800, 0.7);
                 } catch (error) {
-                    imagen = '';
+                    imagen = inputImagenUrl.value;
                 }
             }
 
@@ -959,6 +1133,7 @@
                 precio: precio,
                 stock: stock,
                 imagen: imagen,
+                categoria: document.getElementById('categoria').value,
                 set_codigo: document.getElementById('setCodigoGuardar').value,
                 collector_numero: document.getElementById('collectorNumeroGuardar').value,
                 colores: JSON.parse(document.getElementById('coloresGuardar').value || '[]'),

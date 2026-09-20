@@ -1267,6 +1267,10 @@ body.inicio {
 }
 
 .acciones-seccion {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
     text-align: center;
     margin-top: 8px;
 }
@@ -1414,6 +1418,12 @@ body.inicio {
     border-radius: 14px;
     padding: 14px;
     margin-bottom: 18px;
+}
+
+/* ── Buscador de cartas de One Piece (OPTCG API) ── */
+.buscador-onepiece {
+    margin-top: 18px;
+    border-left: 3px solid #f0d98b;
 }
 
 .buscador-opciones {
@@ -2072,4 +2082,46 @@ body.pagina-proxies {
 @keyframes toast-salida {
     from { opacity: 1; transform: translateY(0); }
     to { opacity: 0; transform: translateY(16px); }
+}
+
+/* ── Badge de categoria ── */
+.categoria-chip {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #1e3a8a;
+    border: 1px solid #c7d2fe;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.carta-reciente .categoria-chip {
+    margin: 0 auto;
+}
+
+.categoria-chip-one_piece {
+    background: #fff1f2;
+    color: #9f1239;
+    border-color: #fecdd3;
+}
+
+.categoria-chip-promocion {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+.categoria-chip-deck {
+    background: #ecfdf5;
+    color: #065f46;
+    border-color: #a7f3d0;
 }

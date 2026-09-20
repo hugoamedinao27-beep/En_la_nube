@@ -19,11 +19,18 @@
 <div class="card card-lista">
     <h1>Ver Productos</h1>
     <h2>Lista de productos registrados</h2>
-    <p>Aqui se muestran todos los productos (cartas de MTG) del sistema.</p>
+    <p>Aqui se muestran todos los productos (cartas de MTG, One Piece, promociones y decks) del sistema.</p>
 
     <div class="filtros">
         <input type="search" id="busqueda" class="campo-busqueda" placeholder="Buscar por nombre o descripcion...">
         <div class="filtros-opciones">
+            <select id="filtroCategoria" class="campo-select">
+                <option value="">Todas las categorías</option>
+                <option value="mtg">Magic: The Gathering</option>
+                <option value="one_piece">One Piece</option>
+                <option value="promocion">Promociones</option>
+                <option value="deck">Decks completos</option>
+            </select>
             <select id="orden" class="campo-select">
                 <option value="recientes">Mas recientes</option>
                 <option value="nombre-asc">Nombre (A-Z)</option>
@@ -97,13 +104,45 @@
         }
     });
 
+    const NOMBRES_CATEGORIA = {
+        mtg: 'MTG',
+        one_piece: 'One Piece',
+        promocion: 'Promoción',
+        deck: 'Deck completo'
+    };
+
+    function etiquetaCategoria(categoria) {
+        return NOMBRES_CATEGORIA[categoria] || 'MTG';
+    }
+
+    function placeholderCategoria(categoria) {
+        if (categoria === 'one_piece') return 'OP';
+        if (categoria === 'promocion') return 'Promo';
+        if (categoria === 'deck') return 'Deck';
+        return 'MTG';
+    }
+
+    function crearBadgeCategoria(categoria) {
+        const chip = document.createElement('div');
+        chip.className = 'categoria-chip' + (categoria ? ' categoria-chip-' + categoria : '');
+        chip.textContent = etiquetaCategoria(categoria);
+        return chip;
+    }
+
     window.addEventListener('DOMContentLoaded', function () {
         cargarProductos();
+
+        const params = new URLSearchParams(window.location.search);
+        const categoriaInicial = params.get('categoria');
+        if (categoriaInicial) {
+            document.getElementById('filtroCategoria').value = categoriaInicial;
+        }
 
         const busqueda = document.getElementById('busqueda');
         const orden = document.getElementById('orden');
         const soloStock = document.getElementById('soloStock');
         const filtroColor = document.getElementById('filtroColor');
+        const filtroCategoria = document.getElementById('filtroCategoria');
         const precioMin = document.getElementById('precioMin');
         const precioMax = document.getElementById('precioMax');
 
@@ -111,10 +150,11 @@
         orden.addEventListener('change', render);
         soloStock.addEventListener('change', render);
         filtroColor.addEventListener('change', render);
+        filtroCategoria.addEventListener('change', render);
         precioMin.addEventListener('input', render);
         precioMax.addEventListener('input', render);
 
-        if (new URLSearchParams(window.location.search).get('carrito') === '1') {
+        if (params.get('carrito') === '1') {
             abrirCarrito();
         }
     });
@@ -160,6 +200,7 @@
         const soloStock = document.getElementById('soloStock').checked;
         const orden = document.getElementById('orden').value;
         const colorSel = document.getElementById('filtroColor').value;
+        const catSel = document.getElementById('filtroCategoria').value;
         const precioMin = document.getElementById('precioMin').value;
         const precioMax = document.getElementById('precioMax').value;
         const minPrecio = precioMin === '' ? null : Number(precioMin);
@@ -168,6 +209,7 @@
         let resultado = lista.filter(function (p) {
             const coincideTexto = !termino || (p.nombre || '').toLowerCase().includes(termino) || (p.descripcion || '').toLowerCase().includes(termino);
             const coincideStock = !soloStock || Number(p.stock) > 0;
+            const coincideCategoria = !catSel || (p.categoria || 'mtg') === catSel;
 
             let coincideColor = true;
             if (colorSel) {
@@ -182,7 +224,7 @@
             const coincideMin = minPrecio === null || (numerico && precio >= minPrecio);
             const coincideMax = maxPrecio === null || (numerico && precio <= maxPrecio);
 
-            return coincideTexto && coincideStock && coincideColor && coincideMin && coincideMax;
+            return coincideTexto && coincideStock && coincideCategoria && coincideColor && coincideMin && coincideMax;
         });
 
         switch (orden) {
@@ -246,7 +288,7 @@
             marco.appendChild(img);
         } else {
             const placeholder = document.createElement('span');
-            placeholder.textContent = 'MTG';
+            placeholder.textContent = placeholderCategoria(p.categoria);
             marco.appendChild(placeholder);
         }
 
@@ -262,6 +304,7 @@
 
         const info = document.createElement('div');
         info.className = 'carta-info';
+        info.appendChild(crearBadgeCategoria(p.categoria));
         info.appendChild(nombre);
         info.appendChild(stock);
         info.appendChild(precio);

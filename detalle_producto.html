@@ -88,6 +88,24 @@
         return 'Colores: ' + colores.map(function (c) { return NOMBRES_COLOR[c] || c; }).join(', ');
     }
 
+    const NOMBRES_CATEGORIA = {
+        mtg: 'Magic: The Gathering',
+        one_piece: 'One Piece',
+        promocion: 'Promoción',
+        deck: 'Deck completo'
+    };
+
+    function etiquetaCategoria(categoria) {
+        return NOMBRES_CATEGORIA[categoria] || 'Magic: The Gathering';
+    }
+
+    function placeholderCategoria(categoria) {
+        if (categoria === 'one_piece') return 'OP';
+        if (categoria === 'promocion') return 'Promo';
+        if (categoria === 'deck') return 'Deck';
+        return 'MTG';
+    }
+
     function mostrarDetalle() {
         const contenedor = document.getElementById('detalle');
         const noEncontrado = document.getElementById('noEncontrado');
@@ -120,7 +138,7 @@
                     img.alt = producto.nombre;
                     imagen.appendChild(img);
                 } else {
-                    imagen.textContent = 'MTG';
+                    imagen.textContent = placeholderCategoria(producto.categoria);
                 }
 
                 const info = document.createElement('div');
@@ -128,7 +146,7 @@
 
                 const tipo = document.createElement('div');
                 tipo.className = 'ficha-tipo';
-                tipo.textContent = 'Cartas de MTG';
+                tipo.textContent = etiquetaCategoria(producto.categoria);
 
                 const nombre = document.createElement('div');
                 nombre.className = 'ficha-nombre';

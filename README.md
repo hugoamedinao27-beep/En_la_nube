@@ -44,7 +44,30 @@ productos solo a admins y crear/ver pedidos a clientes registrados).
 
 ## Datos
 
-Una carta tiene: nombre, descripcion, precio, stock, imagen y fecha. El ID lo genera Firestore.
+Una carta tiene: nombre, descripcion, precio, stock, imagen, categoría y fecha. El ID lo genera Firestore.
+
+### Categorias
+
+Cada producto se guarda con el campo `categoria` para armar secciones en la web:
+
+- `mtg` - cartas de Magic: The Gathering (por defecto, por ejemplo al cargar listas de Scryfall).
+- `one_piece` - cartas del TCG de One Piece (seccion propia en `index.html`).
+- `promocion` - promociones y ofertas.
+- `deck` - decks completos de distintos TCG.
+
+Se elige al registrar/editar un producto, y `ver_productos.html` permite filtrar por
+categoría (tambien acepta `?categoria=one_piece` para pre-filtrar desde un link).
+
+### Buscadores de cartas
+
+En `registrar_producto.html` hay dos buscadores:
+
+- **Scryfall** (Magic): busca cartas de MTG por nombre y descarga la imagen.
+- **OPTCG API** (`registrar_producto.html`): `https://optcgapi.com/api/sets/filtered/?card_name=...`
+  busca cartas de One Piece por nombre (sin clave y con CORS abierto), llena el
+  formulario y deja la categoría en `one_piece`. La referencia de precio proviene
+  de `market_price`. Si la imagen no se puede bajar por CORS, se guarda la URL
+  directa de la API en el campo `imagen`.
 
 Un pedido tiene: lista de cartas (`items` con nombre, precio y cantidad), `total`,
 usuario (email/UID), estado (`pendiente`, `listo_para_despacho`, `entregado` o

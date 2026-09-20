@@ -36,6 +36,15 @@
 
     <form id="formEditar" class="form">
         <label class="campo">
+            <span>Categoría</span>
+            <select id="categoria" class="campo-select">
+                <option value="mtg">Magic: The Gathering</option>
+                <option value="one_piece">One Piece</option>
+                <option value="promocion">Promociones</option>
+                <option value="deck">Deck completo</option>
+            </select>
+        </label>
+        <label class="campo">
             <span>Nombre</span>
             <input type="text" id="nombre" name="nombre" placeholder="Ej: Black Lotus" required>
         </label>
@@ -106,6 +115,7 @@
             const data = docSnap.data();
             document.getElementById('nombre').value = data.nombre || '';
             document.getElementById('descripcion').value = data.descripcion || '';
+            document.getElementById('categoria').value = data.categoria || 'mtg';
             document.getElementById('precio').value = data.precio ?? '';
             document.getElementById('stock').value = data.stock ?? '';
 
@@ -399,7 +409,8 @@
                 nombre: nombre,
                 descripcion: descripcion,
                 precio: precio,
-                stock: stock
+                stock: stock,
+                categoria: document.getElementById('categoria').value
             };
 
             const coloresCrudo = document.getElementById('coloresGuardar').value;

@@ -58,6 +58,27 @@
             <a href="ver_productos.html" class="btn btn-ver">Ver todos los productos</a>
         </div>
     </section>
+
+    <section class="seccion">
+        <h2 class="titulo-seccion">Cartas de One Piece</h2>
+        <p class="subtitulo-seccion">Cartas del juego de cartas coleccionable de One Piece.</p>
+        <div id="onePiece" class="productos recientes"></div>
+        <p id="onePieceVacio" class="mensaje">Todavía no hay cartas de One Piece.</p>
+        <div class="acciones-seccion">
+            <a href="ver_productos.html?categoria=one_piece" class="btn btn-ver">Ver cartas de One Piece</a>
+        </div>
+    </section>
+
+    <section class="seccion">
+        <h2 class="titulo-seccion">Promociones y Decks</h2>
+        <p class="subtitulo-seccion">Promociones y decks completos de distintos TCG.</p>
+        <div id="promoDeck" class="productos recientes"></div>
+        <p id="promoDeckVacio" class="mensaje">Todavía no hay promociones ni decks cargados.</p>
+        <div class="acciones-seccion">
+            <a href="ver_productos.html?categoria=promocion" class="btn btn-ver">Ver promociones</a>
+            <a href="ver_productos.html?categoria=deck" class="btn btn-ver">Ver decks completos</a>
+        </div>
+    </section>
 </main>
 
 <footer class="pie">
@@ -117,6 +138,31 @@
     });
 
     // ── Cartas recientes ──
+    const NOMBRES_CATEGORIA = {
+        mtg: 'MTG',
+        one_piece: 'One Piece',
+        promocion: 'Promoción',
+        deck: 'Deck completo'
+    };
+
+    function etiquetaCategoria(categoria) {
+        return NOMBRES_CATEGORIA[categoria] || 'MTG';
+    }
+
+    function placeholderCategoria(categoria) {
+        if (categoria === 'one_piece') return 'OP';
+        if (categoria === 'promocion') return 'Promo';
+        if (categoria === 'deck') return 'Deck';
+        return 'MTG';
+    }
+
+    function crearBadgeCategoria(categoria) {
+        const chip = document.createElement('div');
+        chip.className = 'categoria-chip' + (categoria ? ' categoria-chip-' + categoria : '');
+        chip.textContent = etiquetaCategoria(categoria);
+        return chip;
+    }
+
     function formatearPrecio(precio) {
         const numero = Number(precio);
         if (!Number.isFinite(numero)) return '$' + precio;
@@ -152,13 +198,14 @@
             marco.appendChild(img);
         } else {
             const placeholder = document.createElement('span');
-            placeholder.textContent = 'MTG';
+            placeholder.textContent = placeholderCategoria(p.categoria);
             marco.appendChild(placeholder);
         }
 
         const info = document.createElement('div');
         info.className = 'carta-info';
 
+        const categoria = crearBadgeCategoria(p.categoria);
         const nombre = document.createElement('div');
         nombre.className = 'carta-nombre';
         nombre.textContent = p.nombre;
@@ -167,6 +214,7 @@
         precio.className = 'carta-precio';
         precio.textContent = formatearPrecio(p.precio);
 
+        info.appendChild(categoria);
         info.appendChild(nombre);
         info.appendChild(badgeStock(p));
         info.appendChild(precio);
@@ -177,11 +225,16 @@
         return carta;
     }
 
-    function cargarRecientes() {
-        const contenedor = document.getElementById('recientes');
-        const vacio = document.getElementById('recientesVacio');
-        const error = document.getElementById('recientesError');
+    function pintarSeccion(contenedor, vacio, error, lista) {
+        contenedor.innerHTML = '';
+        vacio.style.display = lista.length === 0 ? 'block' : 'none';
+        if (error) error.style.display = 'none';
+        lista.forEach(function (p) {
+            contenedor.appendChild(crearCartaReciente(p));
+        });
+    }
 
+    function cargarInicio() {
         const consulta = query(productosRef, orderBy('createdAt', 'desc'));
         getDocs(consulta)
             .then(function (snapshot) {
@@ -191,22 +244,42 @@
                 });
 
                 const recientes = productos.slice(0, 8);
+                const onePiece = productos.filter(function (p) {
+                    return p.categoria === 'one_piece';
+                }).slice(0, 8);
+                const promoDeck = productos.filter(function (p) {
+                    return p.categoria === 'promocion' || p.categoria === 'deck';
+                }).slice(0, 8);
 
-                contenedor.innerHTML = '';
-                vacio.style.display = recientes.length === 0 ? 'block' : 'none';
-                error.style.display = 'none';
-
-                recientes.forEach(function (p) {
-                    contenedor.appendChild(crearCartaReciente(p));
-                });
+                pintarSeccion(
+                    document.getElementById('recientes'),
+                    document.getElementById('recientesVacio'),
+                    document.getElementById('recientesError'),
+                    recientes
+                );
+                pintarSeccion(
+                    document.getElementById('onePiece'),
+                    document.getElementById('onePieceVacio'),
+                    null,
+                    onePiece
+                );
+                pintarSeccion(
+                    document.getElementById('promoDeck'),
+                    document.getElementById('promoDeckVacio'),
+                    null,
+                    promoDeck
+                );
             })
             .catch(function () {
+                const error = document.getElementById('recientesError');
                 error.style.display = 'block';
-                vacio.style.display = 'none';
+                document.getElementById('recientesVacio').style.display = 'none';
+                document.getElementById('onePieceVacio').style.display = 'none';
+                document.getElementById('promoDeckVacio').style.display = 'none';
             });
     }
 
-    window.addEventListener('DOMContentLoaded', cargarRecientes);
+    window.addEventListener('DOMContentLoaded', cargarInicio);
 </script>
 
 </body>
