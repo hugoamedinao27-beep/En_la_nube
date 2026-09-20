@@ -7,6 +7,9 @@ Pagina para registrar y ver cartas de Magic. Los datos se guardan en la nube (Fi
 - `index.html` - inicio (con estado de sesion y roles)
 - `login.html` - iniciar sesion
 - `registro.html` - crear cuenta de cliente (puede ver y pedir cartas)
+- `verificar_cuenta.html` - paso obligatorio cuando el email no está verificado
+  (tras el login o al intentar comprar/solicitar proxies); permite reenviar el
+  correo y comprobar la verificación
 - `ver_productos.html` - ver cartas, armar un carrito y finalizar el pedido (PDF)
 - `registrar_producto.html` - cargar una carta (solo administrador)
 - `editar_producto.html` - modificar una carta (solo administrador)
@@ -20,8 +23,9 @@ Pagina para registrar y ver cartas de Magic. Los datos se guardan en la nube (Fi
 - **Clientes** (se registran en `registro.html` con email/contraseña): ven las
   cartas y pueden dejar pedidos desde la ficha de cada carta. Para pedir cartas
   o solicitar proxies el email debe estar **verificado** (al registrarte llega
-  un correo de Firebase para verificar la cuenta). Esto frena el spam de
-  cuentas y pedidos falsos.
+  un correo de Firebase para verificar la cuenta). Si inicia sesión sin haber
+  verificado, se redirige a `verificar_cuenta.html` hasta que confirme el email.
+  Esto frena el spam de cuentas y pedidos falsos.
 - **Administradores**: ademas, registran/editan/eliminan cartas, gestionan los
   pedidos (`ver_pedidos.html`) y pueden ajustar el stock directo desde la ficha
   de cada carta en `ver_productos.html`. Los admins no necesitan verificar el

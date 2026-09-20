@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar tu cuenta</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="card">
+    <h1>Verificá tu cuenta</h1>
+    <h2>Todavía no podés comprar</h2>
+    <p>Para dejar pedidos o solicitar proxies necesitás confirmar tu email. Te enviamos un enlace de verificación a <strong id="emailUsuario">tu@email.com</strong>. Hacé click en el enlace y después toca "Ya verifiqué, comprobar".</p>
+
+    <div class="acciones">
+        <button type="button" id="btnReenviar" class="btn btn-ver">Reenviar correo</button>
+        <button type="button" id="btnComprobar" class="btn btn-secundario">Ya verifiqué, comprobar</button>
+    </div>
+
+    <p id="mensaje" class="mensaje"></p>
+
+    <a href="index.html" class="btn btn-volver">Volver al inicio</a>
+</div>
+
+<script type="module">
+    import { auth, recargarUsuario, enviarCorreoVerificacion } from './firebaseConfig.js';
+
+    const destino = new URLSearchParams(window.location.search).get('destino') || 'index.html';
+    const mensaje = document.getElementById('mensaje');
+    const btnReenviar = document.getElementById('btnReenviar');
+    const btnComprobar = document.getElementById('btnComprobar');
+
+    async function verificarEstado() {
+        const user = auth.currentUser;
+        if (!user || user.isAnonymous) {
+            location.href = 'login.html?destino=' + encodeURIComponent(destino);
+            return;
+        }
+        document.getElementById('emailUsuario').textContent = user.email;
+        await recargarUsuario(user);
+        if (user.emailVerified) {
+            location.href = destino;
+        }
+    }
+
+    btnReenviar.addEventListener('click', function () {
+        enviarCorreoVerificacion(auth.currentUser).then(function (ok) {
+            mensaje.textContent = ok
+                ? 'Revisá tu casilla de email (y el spam) y hacé click en el enlace para verificar tu cuenta.'
+                : 'No se pudo enviar el correo de verificación. Probá de nuevo más tarde.';
+            mensaje.style.color = ok ? '#15803d' : '#dc2626';
+        });
+    });
+
+    btnComprobar.addEventListener('click', async function () {
+        btnComprobar.disabled = true;
+        btnComprobar.textContent = 'Comprobando...';
+        const user = auth.currentUser;
+        await recargarUsuario(user);
+        if (user && user.emailVerified) {
+            location.href = destino;
+        } else {
+            mensaje.textContent = 'Todavía no está verificado. Revisá tu casilla (y la carpeta de spam) y hacé click en el enlace.';
+            mensaje.style.color = '#dc2626';
+        }
+        btnComprobar.disabled = false;
+        btnComprobar.textContent = 'Ya verifiqué, comprobar';
+    });
+
+    verificarEstado();
+</script>
+
+</body>
+</html>

@@ -588,11 +588,7 @@
             await recargarUsuario(user);
         }
         if (!user.emailVerified && !esAdmin) {
-            const quiere = confirm('Para finalizar un pedido tu email debe estar verificado. ¿Te enviamos ahora el enlace de verificación?');
-            if (quiere) {
-                await enviarCorreoVerificacion(user);
-                mostrarNotificacion('Revisá tu casilla de email y hacé click en el enlace para verificar tu cuenta.', 'info');
-            }
+            location.href = 'verificar_cuenta.html?destino=' + encodeURIComponent(window.location.pathname);
             return;
         }
 

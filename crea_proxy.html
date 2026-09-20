@@ -302,14 +302,7 @@
             await recargarUsuario(usuario);
         }
         if (!usuario.emailVerified) {
-            const quiere = confirm('Para solicitar proxies tu email debe estar verificado. ¿Te enviamos ahora el enlace de verificación?');
-            if (quiere) {
-                await enviarCorreoVerificacion(usuario);
-                avisoForm.textContent = 'Revisá tu casilla de email y hacé click en el enlace para verificar tu cuenta.';
-            } else {
-                avisoForm.textContent = 'Primero verificá tu email y volvé a intentar.';
-            }
-            avisoForm.style.color = '#dc2626';
+            location.href = 'verificar_cuenta.html?destino=' + encodeURIComponent(window.location.pathname);
             return;
         }
 
@@ -448,7 +441,7 @@
         const texto = input.value.trim();
         if (!texto || !proxyActual) return;
         if (!usuario.emailVerified) {
-            mostrarNotificacion('Primero verificá tu email (enlace que te llegó por correo) y volvé a intentar.', 'info');
+            location.href = 'verificar_cuenta.html?destino=' + encodeURIComponent(window.location.pathname);
             return;
         }
         input.value = '';

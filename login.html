@@ -51,8 +51,12 @@
         const password = document.getElementById('password').value;
 
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-            location.href = destino;
+            const credenciales = await signInWithEmailAndPassword(auth, email, password);
+            if (credenciales.user.emailVerified) {
+                location.href = destino;
+            } else {
+                location.href = 'verificar_cuenta.html?destino=' + encodeURIComponent(destino);
+            }
         } catch (error) {
             mensaje.textContent = 'Email o contraseña incorrectos.';
             mensaje.style.color = '#dc2626';
