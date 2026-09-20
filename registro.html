@@ -36,7 +36,7 @@
 </div>
 
 <script type="module">
-    import { auth, createUserWithEmailAndPassword } from './firebaseConfig.js';
+    import { auth, createUserWithEmailAndPassword, enviarCorreoVerificacion } from './firebaseConfig.js';
 
     const form = document.getElementById('formRegistro');
     const mensaje = document.getElementById('mensaje');
@@ -62,8 +62,10 @@
         boton.textContent = 'Creando cuenta...';
 
         try {
-            await createUserWithEmailAndPassword(auth, email, password);
-            location.href = 'index.html';
+            const credenciales = await createUserWithEmailAndPassword(auth, email, password);
+            await enviarCorreoVerificacion(credenciales.user);
+            mensaje.textContent = 'Cuenta creada. Te enviamos un email de verificación: hacé click en el enlace que te llegó antes de hacer pedidos o solicitar proxies.';
+            mensaje.style.color = '#15803d';
         } catch (error) {
             if (error.code === 'auth/email-already-in-use') {
                 mensaje.textContent = 'Ese email ya está registrado. Probá iniciar sesión.';

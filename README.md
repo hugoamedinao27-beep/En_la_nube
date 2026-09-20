@@ -18,10 +18,14 @@ Pagina para registrar y ver cartas de Magic. Los datos se guardan en la nube (Fi
 
 - **Cualquier visitante** puede ver las cartas sin registrarse.
 - **Clientes** (se registran en `registro.html` con email/contraseña): ven las
-  cartas y pueden dejar pedidos desde la ficha de cada carta.
+  cartas y pueden dejar pedidos desde la ficha de cada carta. Para pedir cartas
+  o solicitar proxies el email debe estar **verificado** (al registrarte llega
+  un correo de Firebase para verificar la cuenta). Esto frena el spam de
+  cuentas y pedidos falsos.
 - **Administradores**: ademas, registran/editan/eliminan cartas, gestionan los
   pedidos (`ver_pedidos.html`) y pueden ajustar el stock directo desde la ficha
-  de cada carta en `ver_productos.html`.
+  de cada carta en `ver_productos.html`. Los admins no necesitan verificar el
+  email.
 
 Para configurar los roles desde cero:
 
@@ -100,7 +104,22 @@ Nota: si no tenes la clave de Firebase (`serviceAccountKey.json`), el servidor f
 ## Git y seguridad
 
 - `serviceAccountKey.json` esta en `.gitignore` (nunca se sube).
-- `firestore.rules` permite leer a todos, escribir productos solo a admins, crear/ver pedidos a clientes registrados, y a los clientes descontar stock (solo el campo `stock` y solo hacia abajo) cuando pagan un pedido.
+- `firestore.rules` permite leer a todos, escribir productos solo a admins,
+  crear/ver pedidos y proxies solo a clientes registrados y **con el email
+  verificado** (los admins quedan exentos), y a los clientes descontar stock
+  (solo el campo `stock` y solo hacia abajo) cuando pagan un pedido.
+- `server.js` (solo para desarrollo local) esta endurecido:
+  - Las rutas que escriben (`POST/PUT/DELETE /api/productos`) exigen un **token
+    de sesion de un admin** (Bearer token verificado contra Firebase). Sin
+    token o sin rol admin devuelven 401/403.
+  - Los archivos estaticos se filtran: **`serviceAccountKey.json`, `server.js`,
+    `package.json`, `firestore.rules`, `.env`, `scripts/`, `datos/`,
+    `node_modules/`, etc. nunca se sirven por HTTP** (responden 404).
+  - La subida de imagenes acepta **solo JPG/PNG/WEBP/GIF de hasta 5MB**; la
+    extension del archivo guardado se genera en el servidor segun el tipo MIME
+    (no se puede subir HTML/JS disfrazado de imagen).
+  - No lo expongas a internet: el frontend publicado con GitHub Pages usa
+    Firestore directo, este servidor es solo una ayuda para desarrollo.
 
 ## Scripts (opcionales)
 

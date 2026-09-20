@@ -160,7 +160,7 @@
 </div>
 
 <script type="module">
-    import { auth, onAuthStateChanged, db, collection, addDoc, updateDoc, doc, query, where, onSnapshot, arrayUnion, serverTimestamp } from './firebaseConfig.js';
+    import { auth, onAuthStateChanged, db, collection, addDoc, updateDoc, doc, query, where, onSnapshot, arrayUnion, serverTimestamp, recargarUsuario, enviarCorreoVerificacion } from './firebaseConfig.js';
 
     const bloqueInvitado = document.getElementById('bloqueInvitado');
     const bloqueLogueado = document.getElementById('bloqueLogueado');
@@ -297,6 +297,21 @@
         avisoForm.textContent = '';
         avisoForm.style.color = '';
 
+        if (!usuario.emailVerified) {
+            await recargarUsuario(usuario);
+        }
+        if (!usuario.emailVerified) {
+            const quiere = confirm('Para solicitar proxies tu email debe estar verificado. ¿Te enviamos ahora el enlace de verificación?');
+            if (quiere) {
+                await enviarCorreoVerificacion(usuario);
+                avisoForm.textContent = 'Revisá tu casilla de email y hacé click en el enlace para verificar tu cuenta.';
+            } else {
+                avisoForm.textContent = 'Primero verificá tu email y volvé a intentar.';
+            }
+            avisoForm.style.color = '#dc2626';
+            return;
+        }
+
         const botonEnviar = formProxy.querySelector('button[type="submit"]');
         botonEnviar.disabled = true;
         botonEnviar.textContent = 'Enviando...';
@@ -425,6 +440,10 @@
         const input = document.getElementById('chatTexto');
         const texto = input.value.trim();
         if (!texto || !proxyActual) return;
+        if (!usuario.emailVerified) {
+            alert('Primero verificá tu email (enlace que te llegó por correo) y volvé a intentar.');
+            return;
+        }
         input.value = '';
         updateDoc(doc(db, 'proxies', proxyActual.id), {
             mensajes: arrayUnion({ de: 'cliente', texto: texto, fecha: new Date() })

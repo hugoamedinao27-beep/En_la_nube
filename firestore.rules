@@ -9,6 +9,13 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    // Los clientes deben tener el email verificado para escribir (frena el
+    // spam de cuentas y pedidos falsos). Los admins quedan exentos.
+    function emailVerificado() {
+      return request.auth != null
+        && request.auth.token.email_verified == true;
+    }
+
     // Colección "admins": un documento por UID de administrador.
     // Se puede leer un documento propio (para saber si soy admin), pero nada
     // se escribe desde el navegador. El alta se hace con
@@ -19,23 +26,25 @@ service cloud.firestore {
     }
 
     // Colección "productos" = catálogo público de la tienda.
-    // Cualquiera puede leer; solo los admin escriben. Los clientes autenticados
-    // solo pueden descontar el campo "stock" (al pagar un pedido), nunca
-    // aumentarlo ni tocar el resto de los campos.
+    // Cualquiera puede leer; solo los admin escriben. Los clientes con email
+    // verificado solo pueden descontar el campo "stock" (al pagar un pedido),
+    // nunca aumentarlo ni tocar el resto de los campos.
     match /productos/{productoId} {
       allow read: if true;
       allow create, delete: if esAdmin();
       allow update: if esAdmin()
-        || (request.auth != null
+        || (emailVerificado()
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock'])
             && request.resource.data.stock >= 0
             && request.resource.data.stock < resource.data.stock);
     }
 
-    // Colección "pedidos": cualquier cliente registrado puede pedir cartas.
-    // El cliente ve solo sus pedidos; los admin ven todos y los actualizan.
+    // Colección "pedidos": cualquier cliente registrado y con email verificado
+    // puede pedir cartas. El cliente ve solo sus pedidos; los admin ven todos
+    // y los actualizan.
     match /pedidos/{pedidoId} {
       allow create: if request.auth != null
+        && (esAdmin() || emailVerificado())
         && request.resource.data.usuarioId == request.auth.uid
         && request.resource.data.usuarioEmail == request.auth.token.email;
       allow read: if request.auth != null
@@ -49,13 +58,15 @@ service cloud.firestore {
     // cambia el estado.
     match /proxies/{proxyId} {
       allow create: if request.auth != null
+        && (esAdmin() || emailVerificado())
         && request.resource.data.usuarioId == request.auth.uid
         && request.resource.data.usuarioEmail == request.auth.token.email
         && request.resource.data.estado == 'pendiente';
       allow read: if request.auth != null
         && (resource.data.usuarioId == request.auth.uid || esAdmin());
       allow update: if esAdmin()
-        || (request.auth != null
+        || (emailVerificado()
+            && request.auth != null
             && resource.data.usuarioId == request.auth.uid
             && request.resource.data.usuarioEmail == request.auth.token.email
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mensajes'])

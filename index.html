@@ -8,6 +8,34 @@
 </head>
 <body class="inicio">
 
+<header class="topbar">
+    <a href="index.html" class="topbar-marca">
+        <img src="Imagenes/logo-carton-pintado.jpeg" alt="Logo Cartón Pintado" class="topbar-logo">
+        <span>Cartón Pintado</span>
+    </a>
+    <nav class="topbar-botones" id="botonesInvitado">
+        <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
+        <a href="crea_proxy.html" class="btn btn-pedir">Crea tu proxie</a>
+        <a href="login.html" class="btn btn-login">Iniciar Sesión</a>
+        <a href="registro.html" class="btn btn-registrar">Crear cuenta</a>
+    </nav>
+    <nav class="topbar-botones" id="botonesRegistrado" style="display: none;">
+        <span id="usuarioSesion" class="usuario-sesion"></span>
+        <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
+        <a href="crea_proxy.html" class="btn btn-pedir">Crea tu proxie</a>
+        <a href="registrar_producto.html" class="btn btn-registrar" id="linkRegistrarProducto" style="display: none;">Registrar Producto</a>
+        <a href="ver_pedidos.html" class="btn btn-login" id="linkVerPedidos" style="display: none;">Ver Pedidos</a>
+        <a href="pedidos_pendientes.html" class="btn btn-registrar" id="linkPedidosPendientes" style="display: none;">Pedidos Pendientes</a>
+        <a href="ver_proxies.html" class="btn btn-login" id="linkVerProxies" style="display: none;">Ver Proxies</a>
+        <button type="button" id="btnCerrarSesion" class="btn btn-login">Cerrar Sesión</button>
+    </nav>
+</header>
+
+<div id="avisoVerificar" class="aviso-verificar">
+    <span>Tu email todavía no está verificado: hacé click en el enlace que te llegó por correo para poder hacer pedidos y solicitar proxies.</span>
+    <button type="button" id="btnReenviarVerificacion" class="btn btn-ver">Reenviar email</button>
+</div>
+
 <header class="hero">
     <div class="hero-contenido">
         <img src="Imagenes/logo-carton-pintado.jpeg" alt="Logo Cartón Pintado" class="logo-principal">
@@ -16,22 +44,6 @@
         <p class="hero-descripcion">
             Tienda dedicada a la venta de cartas de Magic: The Gathering y otros juegos de cartas coleccionables.
         </p>
-        <div class="botones botones-hero" id="botonesInvitado">
-            <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
-            <a href="crea_proxy.html" class="btn btn-pedir">Crea tu proxie</a>
-            <a href="login.html" class="btn btn-login">Iniciar Sesión</a>
-            <a href="registro.html" class="btn btn-registrar">Crear cuenta</a>
-        </div>
-        <div class="botones botones-hero" id="botonesRegistrado" style="display: none;">
-            <p id="usuarioSesion" class="usuario-sesion"></p>
-            <a href="ver_productos.html" class="btn btn-ver">Ver Productos</a>
-            <a href="crea_proxy.html" class="btn btn-pedir">Crea tu proxie</a>
-            <a href="registrar_producto.html" class="btn btn-registrar" id="linkRegistrarProducto" style="display: none;">Registrar Producto</a>
-            <a href="ver_pedidos.html" class="btn btn-login" id="linkVerPedidos" style="display: none;">Ver Pedidos</a>
-            <a href="pedidos_pendientes.html" class="btn btn-registrar" id="linkPedidosPendientes" style="display: none;">Pedidos Pendientes</a>
-            <a href="ver_proxies.html" class="btn btn-login" id="linkVerProxies" style="display: none;">Ver Proxies</a>
-            <button type="button" id="btnCerrarSesion" class="btn btn-login">Cerrar Sesión</button>
-        </div>
     </div>
 </header>
 
@@ -53,7 +65,7 @@
 </footer>
 
 <script type="module">
-    import { auth, onAuthStateChanged, signOut, obtenerEsAdmin, productosRef, getDocs, query, orderBy } from './firebaseConfig.js';
+    import { auth, onAuthStateChanged, signOut, obtenerEsAdmin, productosRef, getDocs, query, orderBy, enviarCorreoVerificacion } from './firebaseConfig.js';
 
     const botonesInvitado = document.getElementById('botonesInvitado');
     const botonesRegistrado = document.getElementById('botonesRegistrado');
@@ -62,6 +74,8 @@
     const linkVerPedidos = document.getElementById('linkVerPedidos');
     const linkPedidosPendientes = document.getElementById('linkPedidosPendientes');
     const linkVerProxies = document.getElementById('linkVerProxies');
+    const avisoVerificar = document.getElementById('avisoVerificar');
+    const btnReenviarVerificacion = document.getElementById('btnReenviarVerificacion');
 
     onAuthStateChanged(auth, function (user) {
         if (user && !user.isAnonymous) {
@@ -74,11 +88,24 @@
                 linkVerPedidos.style.display = admin ? '' : 'none';
                 linkPedidosPendientes.style.display = admin ? '' : 'none';
                 linkVerProxies.style.display = admin ? '' : 'none';
+
+                if (!admin && !user.emailVerified) {
+                    avisoVerificar.style.display = 'block';
+                }
             });
         } else {
             botonesInvitado.style.display = 'flex';
             botonesRegistrado.style.display = 'none';
+            avisoVerificar.style.display = 'none';
         }
+    });
+
+    btnReenviarVerificacion.addEventListener('click', function () {
+        enviarCorreoVerificacion(auth.currentUser).then(function (ok) {
+            alert(ok
+                ? 'Revisá tu casilla de email y hacé click en el enlace para verificar tu cuenta.'
+                : 'No se pudo enviar el correo de verificación. Probá de nuevo más tarde.');
+        });
     });
 
     document.getElementById('btnCerrarSesion').addEventListener('click', function () {
